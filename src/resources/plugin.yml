@@ -1,0 +1,25 @@
+name: FlooNetwork
+main: me.maienm.FlooNetwork.FlooNetwork
+version: 0.0.1
+author: MaienM
+dev-url: 
+softdepend: [My Worlds,Multiverse]
+description: >
+             Move around the way REAL wizzards do!
+commands:
+  fn:
+    description: Get FlooNetwork info
+    permission: floonetwork.use
+permissions:
+  floonetwork.*:
+    description: all permissions
+    children:
+      floonetwork.use: true
+      floonetwork.create: true
+      floonetwork.destroy: true
+  floonetwork.use:
+    description: Can use a Floo Network fireplace
+  floonetwork.createFireplace:
+    description: Can create a Floo Network fireplace
+  floonetwork.destroyFireplace:
+    description: Can destroy a Floo Network fireplace
