@@ -18,6 +18,9 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.block.Block;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
+import org.bukkit.entity.EntityType;
 
 public class FlooNetwork extends JavaPlugin implements Listener 
 {
@@ -137,5 +140,24 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Mark event as cancelled.
         event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onPlayerDamage(EntityDamageEvent event)
+    {
+        // Check if the entity is a player.
+        if (event.getEntityType() != EntityType.PLAYER)
+        {
+            return;
+        }
+
+        // Check if the damage is due to fire.
+        if (event.getCause() != DamageCause.FIRE && event.getCause() != DamageCause.FIRE_TICK)
+        {
+            return;
+        }
+
+        event.setCancelled(true);
+        event.getEntity().setFireTicks(0);
     }
 }
