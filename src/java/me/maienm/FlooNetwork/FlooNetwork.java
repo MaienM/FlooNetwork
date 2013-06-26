@@ -2,7 +2,9 @@ package me.maienm.FlooNetwork;
 
 import java.io.File;
 import java.util.HashMap;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.command.Command;
@@ -11,6 +13,11 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.block.Block;
+import org.bukkit.inventory.ItemStack;
 
 public class FlooNetwork extends JavaPlugin implements Listener 
 {
@@ -21,7 +28,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
     protected HashMap<String, Location> destinations = new HashMap<String, Location>();
     
     @Override
-    public void onEnable () 
+    public void onEnable() 
     {
         System.out.println("FlooNetwork:");
 
@@ -36,40 +43,14 @@ public class FlooNetwork extends JavaPlugin implements Listener
             }
         }
 
-        /*
-        saveConfig();
-        if (dests != null) {
-            for (String key : dests.getKeys(false)) {
-                String world = dests.getString(key+".world");
-                if (getServer().getWorld(world) == null) {
-                    WorldCreator wc = makeWorld(world, null);
-                    Bukkit.createWorld(wc);
-                }
-                key = key.toLowerCase();
-                double x = dests.getDouble(key+".x");
-                double y = dests.getDouble(key+".y");
-                double z = dests.getDouble(key+".z");
-                List<Float> floats = dests.getFloatList(key+".yawpitch");
-                float yaw = floats.get(0);
-                float pitch = floats.get(1);
-                Location loc = new Location(getServer().getWorld(world), x, y, z, yaw, pitch);
-                destinations.put(key, loc);
-            }
-        }
-        portalConfig = getPortals();
-        forceWorldLoads();
+        // Register all event handlers.
         getServer().getPluginManager().registerEvents(this, this);
-        */
     }
 
-    /*@Override
-    public void onDisable() 
-    {
-    }*/
-    
     @Override
-    public boolean onCommand (CommandSender sender, Command cmd, String commandLabel, String[] args) 
+    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) 
     {
+        // No arguments => usage.
         if (args.length == 0)
         {
             String version = getDescription().getVersion();
@@ -87,22 +68,74 @@ public class FlooNetwork extends JavaPlugin implements Listener
             switch (command.toLowerCase())
             {
                 case "list":
-                    Player player = null;
+                    String player = null;
+
+                    // If no arguments => current player.
                     if (args.length == 1)
                     {
-                        
+                        // If the sender is not a player (console), give an error.
+                        if (sender instanceof Player)
+                        {
+                            player = ((Player) sender).getPlayerListName().toLowerCase();
+                        }
+                        else
+                        {
+                            sender.sendMessage(ChatColor.RED + "You must specify an username when using this from the console.");
+                            return false;
+                        }
                     }
+
+                    // If one argument => get player by name.
                     else if (args.length == 2)
                     {
-
+                        player = args[1].toLowerCase();
                     }
+
+                    // If more arguments => error.
                     else 
                     {
                         sender.sendMessage(ChatColor.RED + "Invalid number of arguments.");
+                        return false;
                     }
                     break;
             }
         }
         return false;
+    }
+    
+    @EventHandler(ignoreCancelled = true)
+    public void onSignChange(SignChangeEvent event) 
+    {
+        // Check if the sign matches the criterea.
+        if (!event.getLine(0).equals("[fn]"))
+        {
+            return;
+        }
+
+        // Get the player that triggered the event.
+        Player player = event.getPlayer();
+
+        // Check the player for permissions.
+        if (!player.hasPermission("floonetwork.createFireplace"))
+        {
+            player.sendMessage(ChatColor.RED + "You do not have permission create a FlooNetwork fireplace.");
+            rejectSign(event);
+        }
+    }
+
+    /**
+     * Reject an SignChangeEvent, dropping the sign.
+     */
+    private void rejectSign(SignChangeEvent event)
+    {
+        // Get the sign.
+        Block sign = event.getBlock();
+
+        // Replace the sign by air, drop as resource.
+        sign.setTypeId(0);
+        sign.getWorld().dropItem(sign.getLocation(), new ItemStack(Material.SIGN, 1));
+
+        // Mark event as cancelled.
+        event.setCancelled(true);
     }
 }
