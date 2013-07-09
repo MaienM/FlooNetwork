@@ -1,7 +1,9 @@
 package com.maienm.FlooNetwork;
 
+import com.maienm.FlooNetwork.Fireplace;
 import java.io.File;
 import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -9,6 +11,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -36,7 +39,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
     /**
      * The material used to travel.
      */
-    final protected Material travelCatalyst = Material.REDSTONE;
+    final protected Material TRAVALCATALYST = Material.REDSTONE;
 
     /**
      * The list of all DamageCause types we want to ignore when in a fireplace.
@@ -161,7 +164,12 @@ public class FlooNetwork extends JavaPlugin implements Listener
             rejectSign(event);
             return;
         }
-        if (fireplaces[player][name]
+        if (fireplaces.containsKey(player) && fireplaces.get(player).containsKey(name))
+        {
+            player.sendMessage(ChatColor.RED + "You already have a fireplace with this name.");
+            rejectSign(event);
+            return;
+        }
 
         // Check whether we can find a valid fireplace here.
         Fireplace fireplace = Fireplace.detect(event.getBlock().getLocation());
@@ -172,7 +180,17 @@ public class FlooNetwork extends JavaPlugin implements Listener
             return;
         }
 
-        player.sendMessage(ChatColor.BLUE + "Fireplace detected!");
+        // Set all values of the fireplace.
+        fireplace.owner = player;
+        fireplace.name = name;
+
+        // Store the fireplace.
+        if (!fireplaces.containsKey(player))
+            fireplaces.put(player, new HashMap<String, Fireplace>());
+        fireplaces.get(player).put(name, fireplace);
+
+        // Notify the player.
+        player.sendMessage(ChatColor.BLUE + "Fireplace created");
         System.out.println(fireplace.toString());
     }
 
@@ -209,7 +227,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check if the source of damage is a fireplace.
         Player player = (Player) event.getEntity();
-        if (!isFlooNetworkFireplace(player.getLocation()))
+        if (!isFireplace(player.getLocation(), true))
         {
             return;
         }
@@ -223,7 +241,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
     public void onPlayerUse(PlayerInteractEvent event)
     {
         // Check whether the player is using the correct material.
-        if (event.getMaterial() != travelCatalyst)
+        if (event.getMaterial() != TRAVALCATALYST)
         {
             return;
         }
@@ -236,7 +254,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check whether the player is in a fireplace.
         Player player = event.getPlayer();
-        if (!isFlooNetworkFireplace(player.getLocation()))
+        if (!isFireplace(player.getLocation(), true))
         {
             return;
         }
@@ -256,12 +274,33 @@ public class FlooNetwork extends JavaPlugin implements Listener
     /**
      * Determine whether the Location is part of a FlooNetwork Fireplace.
      */
-    private boolean isFlooNetworkFireplace(Location location)
+    private boolean isFireplace(Location location, boolean fuzzyLookup)
     {
-        // Loop over the fireplaces.
-        for (Fireplace fireplace : fireplaces.values())
+        // Build the list of locations.
+        ArrayList<Location> locations = new ArrayList<Location>();
+        locations.add(location.clone());
+        if (fuzzyLookup)
         {
-            return true;
+            locations.add(location.clone().add(0.5,  0, 0));
+            locations.add(location.clone().add(-0.5, 0, 0.5));
+            locations.add(location.clone().add(-0.5, 0, -0.5));
+            locations.add(location.clone().add(0,    0, -0.5));
+        }
+
+        // Loop over the fireplaces.
+        for (HashMap<String, Fireplace> userFireplaces : fireplaces.values())
+        {
+            for (Fireplace fireplace : userFireplaces.values())
+            {
+                // Loop over the locations.
+                for (Location loc : locations)
+                {
+                    if (fireplace.contains(loc))
+                    {
+                        return true;
+                    }
+                }
+            }
         }
         return false;
     }

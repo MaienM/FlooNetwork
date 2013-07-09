@@ -62,15 +62,15 @@ public class Fireplace
 	{
 		Location loc = location.clone();
 		if (isValidMaterial(loc) && 
-			isValidMaterial(loc.add(0, 1, 0)) &&
-			isValidMaterial(loc.add(0, 1, 0)) &&
-			isValidMaterial(loc.add(x, 0, z)) &&
-			isValidMaterial(loc.add(0, 1, 0)) &&
-			isValidMaterial(loc.add(x, -1, z)) &&
-			isValidMaterial(loc.add(0, 1, 0)) &&
-			isValidMaterial(loc.add(x, -1, z)) &&
-			isValidMaterial(loc.add(0, -1, 0)) &&
-			isValidMaterial(loc.add(0, -1, 0)))
+		    isValidMaterial(loc.add(0, 1, 0)) &&
+		    isValidMaterial(loc.add(0, 1, 0)) &&
+		    isValidMaterial(loc.add(x, 0, z)) &&
+		    isValidMaterial(loc.add(0, 1, 0)) &&
+		    isValidMaterial(loc.add(x, -1, z)) &&
+		    isValidMaterial(loc.add(0, 1, 0)) &&
+		    isValidMaterial(loc.add(x, -1, z)) &&
+		    isValidMaterial(loc.add(0, -1, 0)) &&
+		    isValidMaterial(loc.add(0, -1, 0)))
 		{
 			Fireplace fp = new Fireplace();
 			fp.location = location;
@@ -118,6 +118,28 @@ public class Fireplace
 		}
 
 		return fp;
+	}
+
+	/**
+	 * Check if a given location is part of a fireplace.
+	 */
+	public boolean contains(Location location)
+	{
+		int x = this.location.getBlockX();
+		int y = this.location.getBlockY();
+		int z = this.location.getBlockZ();
+		int x1 = Math.min(x, x + 3 * xDirection);
+		int x2 = Math.max(x, x + 3 * xDirection);
+		int z1 = Math.min(z, z + 3 * zDirection);
+		int z2 = Math.max(z, z + 3 * zDirection);
+
+		int lx = location.getBlockX();
+		int ly = location.getBlockY();
+		int lz = location.getBlockZ();
+
+		return (x1 <= lx && lx <= x2 &&
+		        z1 <= lz && lz <= z2 &&
+			y >= ly && y <= ly + 3);
 	}
 
 	/**
