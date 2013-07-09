@@ -1,9 +1,9 @@
 name: FlooNetwork
-main: me.maienm.FlooNetwork.FlooNetwork
+main: com.maienm.FlooNetwork.FlooNetwork
 version: 0.0.1
 author: MaienM
 dev-url: 
-softdepend: [My Worlds,Multiverse]
+softdepend: [LWC]
 description: >
              Move around the way REAL wizzards do!
 commands:

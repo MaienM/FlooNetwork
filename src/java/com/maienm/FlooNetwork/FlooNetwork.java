@@ -1,26 +1,31 @@
-package me.maienm.FlooNetwork;
+package com.maienm.FlooNetwork;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.ChatColor;
-import org.bukkit.entity.Player;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.event.Listener;
-import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.block.Block;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
-import org.bukkit.entity.EntityType;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.java.JavaPlugin;
 
 public class FlooNetwork extends JavaPlugin implements Listener 
 {
@@ -28,8 +33,30 @@ public class FlooNetwork extends JavaPlugin implements Listener
     protected FileConfiguration config;
     private File portalFile;
 
-    protected HashMap<String, Location> destinations = new HashMap<String, Location>();
-    
+    /**
+     * The material used to travel.
+     */
+    final protected Material travelCatalyst = Material.REDSTONE;
+
+    /**
+     * The list of all DamageCause types we want to ignore when in a fireplace.
+     */
+    private static final Set<DamageCause> IGNORED_DAMAGECAUSES = new HashSet<DamageCause>(Arrays.asList(
+        new DamageCause[] {DamageCause.FIRE, DamageCause.FIRE_TICK}
+    ));
+
+    /**
+     * The list of all Action types we want to accept to travel.
+     */
+    private static final Set<Action> ACCEPTED_TRAVEL_ACTIONS = new HashSet<Action>(Arrays.asList(
+        new Action[] {Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK}
+    ));
+
+    /**
+     * Map of all fireplaces.
+     */
+    private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
+
     @Override
     public void onEnable() 
     {
@@ -118,12 +145,35 @@ public class FlooNetwork extends JavaPlugin implements Listener
         // Get the player that triggered the event.
         Player player = event.getPlayer();
 
-        // Check the player for permissions.
+        // Check whether the user has the required permissions.
         if (!player.hasPermission("floonetwork.createFireplace"))
         {
-            player.sendMessage(ChatColor.RED + "You do not have permission create a FlooNetwork fireplace.");
+            player.sendMessage(ChatColor.RED + "You do not have permission to create a fireplace.");
             rejectSign(event);
+            return;
         }
+
+        // Check whether the the second line is valid.
+        String name = event.getLine(1);
+        if (name.equals(""))
+        {
+            player.sendMessage(ChatColor.RED + "You need to give the fireplace a name.");
+            rejectSign(event);
+            return;
+        }
+        if (fireplaces[player][name]
+
+        // Check whether we can find a valid fireplace here.
+        Fireplace fireplace = Fireplace.detect(event.getBlock().getLocation());
+        if (fireplace == null) 
+        {
+            player.sendMessage(ChatColor.RED + "That does not seem to be a valid fireplace layout.");
+            rejectSign(event);
+            return;
+        }
+
+        player.sendMessage(ChatColor.BLUE + "Fireplace detected!");
+        System.out.println(fireplace.toString());
     }
 
     /**
@@ -142,7 +192,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerDamage(EntityDamageEvent event)
     {
         // Check if the entity is a player.
@@ -152,12 +202,67 @@ public class FlooNetwork extends JavaPlugin implements Listener
         }
 
         // Check if the damage is due to fire.
-        if (event.getCause() != DamageCause.FIRE && event.getCause() != DamageCause.FIRE_TICK)
+        if (!IGNORED_DAMAGECAUSES.contains(event.getCause()))
         {
             return;
         }
 
+        // Check if the source of damage is a fireplace.
+        Player player = (Player) event.getEntity();
+        if (!isFlooNetworkFireplace(player.getLocation()))
+        {
+            return;
+        }
+
+        // Cancel the damage.
         event.setCancelled(true);
         event.getEntity().setFireTicks(0);
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerUse(PlayerInteractEvent event)
+    {
+        // Check whether the player is using the correct material.
+        if (event.getMaterial() != travelCatalyst)
+        {
+            return;
+        }
+
+        // Check whether the user is right-clicking.
+        if (!ACCEPTED_TRAVEL_ACTIONS.contains(event.getAction()))
+        {
+            return;
+        }
+
+        // Check whether the player is in a fireplace.
+        Player player = event.getPlayer();
+        if (!isFlooNetworkFireplace(player.getLocation()))
+        {
+            return;
+        }
+
+        // Check whether the user has the required permissions.
+        if (!player.hasPermission("floonetwork.useFireplace"))
+        {
+            player.sendMessage(ChatColor.RED + "You do not have permission to use a FlooNetwork fireplace.");
+            return;
+        }
+
+        // Consume item.
+        ItemStack item = event.getItem();
+        item.setAmount(item.getAmount() - 1);
+    }
+
+    /**
+     * Determine whether the Location is part of a FlooNetwork Fireplace.
+     */
+    private boolean isFlooNetworkFireplace(Location location)
+    {
+        // Loop over the fireplaces.
+        for (Fireplace fireplace : fireplaces.values())
+        {
+            return true;
+        }
+        return false;
     }
 }
