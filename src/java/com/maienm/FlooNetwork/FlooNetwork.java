@@ -174,67 +174,134 @@ public class FlooNetwork extends JavaPlugin implements Listener
         saveConfig();
     }
 
+    /**
+     * Command event.
+     *
+     * Handles the /fn command.
+     */
     @Override
-    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] args) 
+    public boolean onCommand(CommandSender sender, Command cmd, String commandLabel, String[] arguments)
     {
+        // Convert the arguments to a list.
+        ArrayList<String> args = new ArrayList<String>(Arrays.asList(arguments));
+
         // No arguments => usage.
-        if (args.length == 0)
+        if (args.size() == 0)
         {
             String version = getDescription().getVersion();
             sender.sendMessage(ChatColor.GOLD + "FlooNetwork " + ChatColor.BLUE + version + ChatColor.GOLD + " by MaienM");
             sender.sendMessage("--------------------");
             sender.sendMessage("/fn list: List your own fireplaces.");
-            sender.sendMessage("/fn list <player>: List your own fireplaces.");
+            sender.sendMessage("/fn list <player>: List the fireplaces of <player>.");
             sender.sendMessage("/fn listall: List all fireplaces.");
-            sender.sendMessage("/fn warpto <fireplace>: Warp to fireplace.");
+            sender.sendMessage("/fn warpto <player> <fireplace>: Warp self to <fireplace> of <player>.");
+            sender.sendMessage("/fn warpto <player> <fireplace> <target>: Warp <target> to <fireplace> of <player>.");
             sender.sendMessage("/fn reload: Reload the config.");
             return true;
         }
         else 
         {
-            String command = args[0];
+            String command = args.remove(0);
+            OfflinePlayer subject;
             switch (command.toLowerCase())
             {
                 case "list":
-                    String player = null;
-
-                    // If no arguments => current player.
-                    if (args.length == 1)
+                    // Get the subject.
+                    subject = getSubject(sender, args);
+                    if (subject == null)
                     {
-                        // If the sender is not a player (console), give an error.
-                        if (sender instanceof Player)
-                        {
-                            player = ((Player) sender).getPlayerListName().toLowerCase();
-                        }
-                        else
-                        {
-                            sender.sendMessage(ChatColor.RED + "You must specify an username when using this from the console.");
-                            return false;
-                        }
-                    }
-
-                    // If one argument => get player by name.
-                    else if (args.length == 2)
-                    {
-                        player = args[1].toLowerCase();
+                        return false;
                     }
 
                     // If more arguments => error.
-                    else 
+                    if (args.size() > 0)
                     {
-                        sender.sendMessage(ChatColor.RED + "Invalid number of arguments.");
-                        return false;
+                        return sendError(sender, "Invalid number of arguments.");
                     }
                     break;
 
                 case "reload":
                     reloadConfigCustom();
                     break;
+
+                case "warpto":
+                case "tp":
+                    // Get the fireplace.
+                    if (args.size() < 2)
+                    {
+                        return sendError(sender, "Invalid number of arguments.");
+                    }
+                    Fireplace fp = getFireplace(getServer().getOfflinePlayer(args.remove(0)), args.remove(0));
+                    if (fp == null)
+                    {
+                        return sendError(sender, "Unable to find fireplace.");
+                    }
+
+                    // Get the subject.
+                    subject = getSubject(sender, args);
+                    if (subject == null)
+                    {
+                        return false;
+                    }
+
+                    // If more arguments => error.
+                    if (args.size() > 0)
+                    {
+                        return sendError(sender, "Invalid number of arguments.");
+                    }
+
+                    // Warp to the fireplace.
+                    Player player = subject.getPlayer();
+                    if (player == null)
+                    {
+                        return sendError(sender, "Unable to find target player.");
+                    }
+                    fp.warpTo(player);
             }
         }
         return false;
     }
+
+    /**
+     * Convenience method to get the subject of a command. The subject can be either the first remaining argument, the current player, or none.
+     */
+    private OfflinePlayer getSubject(CommandSender sender, List<String> args)
+    {
+        // If no arguments => current player.
+        if (args.size() == 0)
+        {
+            // If the sender is not a player (console), give an error.
+            if (sender instanceof Player)
+            {
+                return (OfflinePlayer)sender;
+            }
+            else
+            {
+                sendError(sender, "You must specify a player when using this from the console.");
+                return null;
+            }
+        }
+
+        // Else => get player by name.
+        else 
+        {
+            OfflinePlayer player = getServer().getOfflinePlayer(args.remove(0));
+
+            if (player == null)
+            {
+                sendError(sender, "Unknown user.");
+                return null;
+            }
+
+            return player;
+        }
+    }
     
+    /**
+     * Sign placement/change event.
+     *
+     * Handles detection of new fireplaces.
+     */
     @EventHandler(ignoreCancelled = true)
     public void onSignChange(SignChangeEvent event) 
     {
@@ -250,7 +317,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         // Check whether the user has the required permissions.
         if (!player.hasPermission("floonetwork.createFireplace"))
         {
-            player.sendMessage(ChatColor.RED + "You do not have permission to create a fireplace.");
+            sendError(player, "You do not have permission to create a fireplace.");
             rejectSign(event);
             return;
         }
@@ -259,13 +326,13 @@ public class FlooNetwork extends JavaPlugin implements Listener
         String name = event.getLine(1);
         if (name.equals(""))
         {
-            player.sendMessage(ChatColor.RED + "You need to give the fireplace a name.");
+            sendError(player, "You need to give the fireplace a name.");
             rejectSign(event);
             return;
         }
-        if (fireplaces.containsKey(player) && fireplaces.get(player).containsKey(name))
+        if (getFireplace(player, name) != null)
         {
-            player.sendMessage(ChatColor.RED + "You already have a fireplace with this name.");
+            sendError(player, "You already have a fireplace with this name.");
             rejectSign(event);
             return;
         }
@@ -274,7 +341,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         Fireplace fireplace = Fireplace.detect(event.getBlock().getLocation());
         if (fireplace == null) 
         {
-            player.sendMessage(ChatColor.RED + "That does not seem to be a valid fireplace layout.");
+            sendError(player, "That does not seem to be a valid fireplace layout.");
             rejectSign(event);
             return;
         }
@@ -312,6 +379,11 @@ public class FlooNetwork extends JavaPlugin implements Listener
         event.setCancelled(true);
     }
 
+    /**
+     * Player damage event.
+     *
+     * Handles protecting a player from fire while in a fireplace.
+     */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onPlayerDamage(EntityDamageEvent event)
     {
@@ -339,6 +411,11 @@ public class FlooNetwork extends JavaPlugin implements Listener
         event.getEntity().setFireTicks(0);
     }
 
+    /**
+     * Item use event.
+     *
+     * Handles a player using a fireplace.
+     */
     @EventHandler(ignoreCancelled = true)
     public void onPlayerUse(PlayerInteractEvent event)
     {
@@ -364,7 +441,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         // Check whether the user has the required permissions.
         if (!player.hasPermission("floonetwork.useFireplace"))
         {
-            player.sendMessage(ChatColor.RED + "You do not have permission to use a FlooNetwork fireplace.");
+            sendError(player, "You do not have permission to use a FlooNetwork fireplace.");
             return;
         }
 
@@ -405,5 +482,26 @@ public class FlooNetwork extends JavaPlugin implements Listener
             }
         }
         return false;
+    }
+
+    /**
+     * Convenience method to send an error message to the user.
+     */
+    private boolean sendError(CommandSender sender, String error)
+    {
+        sender.sendMessage(ChatColor.RED + error);
+        return false;
+    }
+
+    /**
+     * Convenience method to find a fireplace.
+     */
+    private Fireplace getFireplace(OfflinePlayer player, String name)
+    {
+        if (fireplaces.containsKey(player) && fireplaces.get(player).containsKey(name))
+        {
+            return fireplaces.get(player).get(name);
+        }
+        return null;
     }
 }

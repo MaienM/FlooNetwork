@@ -172,4 +172,15 @@ public class Fireplace
 			location.getBlockX() + xDirection * 3, location.getBlockY(), location.getBlockZ() + zDirection * 3,
 			xDirection, zDirection);
 	}
+
+	/**
+	 * Warp the player to this fireplace.
+	 */
+	public void warpTo(Player player)
+	{
+		Location loc = location.clone();
+		loc.add(xDirection * 1.5 - zDirection + 0.5, 0, zDirection * 1.5 + xDirection + 0.5);
+		loc.setYaw((float)(xDirection - 1) * 90 + (zDirection == 1 ? 180 : 0));
+		player.teleport(loc, TeleportCause.PLUGIN);
+	}
 }
