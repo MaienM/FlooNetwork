@@ -9,6 +9,8 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
+import org.bukkit.entity.Player;
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.material.Sign;
 
 public class Fireplace
@@ -156,7 +158,7 @@ public class Fireplace
 	 */
 	public Location getSignLocation()
 	{
-		return location.clone().add(xDirection * 3, 1, zDirection * 3);
+		return location.clone().add(xDirection * 3 - zDirection, 1, zDirection * 3 + xDirection);
 	}
 
 	/**
@@ -164,9 +166,10 @@ public class Fireplace
 	 */
 	public String toString()
 	{
-		return String.format("Fireplace %s by %s, spanning from %d, %d, %d to %d, %d, %d", 
+		return String.format("Fireplace %s by %s, spanning from %d, %d, %d to %d, %d, %d (xDirection = %d, zDirection = %d)", 
 			name, owner != null ? owner.getName() : "Unknown",
 			location.getBlockX(), location.getBlockY(), location.getBlockZ(), 
-			location.getBlockX() + xDirection * 3, location.getBlockY(), location.getBlockZ() + zDirection * 3);
+			location.getBlockX() + xDirection * 3, location.getBlockY(), location.getBlockZ() + zDirection * 3,
+			xDirection, zDirection);
 	}
 }
