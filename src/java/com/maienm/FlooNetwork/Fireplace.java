@@ -154,11 +154,32 @@ public class Fireplace
 	}
 
 	/**
+	 * Check whether a fireplace is lighted.
+	 */
+	public boolean isLighted()
+	{
+		Location loc = location.clone();
+		return loc.add(xDirection, 0, zDirection).getBlock().getType() == Material.FIRE &&
+		       loc.add(xDirection, 0, zDirection).getBlock().getType() == Material.FIRE;
+	}
+
+	/**
 	 * Get the location of the sign belonging to this fireplace.
 	 */
 	public Location getSignLocation()
 	{
 		return location.clone().add(xDirection * 3 - zDirection, 1, zDirection * 3 + xDirection);
+	}
+
+	/**
+	 * Warp the player to this fireplace.
+	 */
+	public void warpTo(Player player)
+	{
+		Location loc = location.clone();
+		loc.add(xDirection * 1.5 - zDirection + 0.5, 0, zDirection * 1.5 + xDirection + 0.5);
+		loc.setYaw((float)(xDirection - 1) * 90 + (zDirection == 1 ? 180 : 0));
+		player.teleport(loc, TeleportCause.PLUGIN);
 	}
 
 	/**
@@ -171,16 +192,5 @@ public class Fireplace
 			location.getBlockX(), location.getBlockY(), location.getBlockZ(), 
 			location.getBlockX() + xDirection * 3, location.getBlockY(), location.getBlockZ() + zDirection * 3,
 			xDirection, zDirection);
-	}
-
-	/**
-	 * Warp the player to this fireplace.
-	 */
-	public void warpTo(Player player)
-	{
-		Location loc = location.clone();
-		loc.add(xDirection * 1.5 - zDirection + 0.5, 0, zDirection * 1.5 + xDirection + 0.5);
-		loc.setYaw((float)(xDirection - 1) * 90 + (zDirection == 1 ? 180 : 0));
-		player.teleport(loc, TeleportCause.PLUGIN);
 	}
 }

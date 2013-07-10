@@ -401,7 +401,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check if the source of damage is a fireplace.
         Player player = (Player) event.getEntity();
-        if (!isFireplace(player.getLocation(), true))
+        if (getFireplace(player.getLocation(), true) == null)
         {
             return;
         }
@@ -433,15 +433,26 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check whether the player is in a fireplace.
         Player player = event.getPlayer();
-        if (!isFireplace(player.getLocation(), true))
+        Fireplace fp = getFireplace(player.getLocation(), true);
+        if (fp == null)
         {
             return;
         }
+
+        // Block the event, in case the catalyst is set to something place/useable (such as redstone).
+        event.setCancelled(true);
 
         // Check whether the user has the required permissions.
         if (!player.hasPermission("floonetwork.useFireplace"))
         {
             sendError(player, "You do not have permission to use a FlooNetwork fireplace.");
+            return;
+        }
+
+        // Check whether the fireplace is lighted.
+        if (!fp.isLighted())
+        {
+            sendError(player, "The fireplace is not burning. What a poor excuse for a fireplace it is.");
             return;
         }
 
@@ -451,9 +462,19 @@ public class FlooNetwork extends JavaPlugin implements Listener
     }
 
     /**
-     * Determine whether the Location is part of a FlooNetwork Fireplace.
+     * Convenience method to send an error message to the user.
      */
-    private boolean isFireplace(Location location, boolean fuzzyLookup)
+    private boolean sendError(CommandSender sender, String error)
+    {
+        sender.sendMessage(ChatColor.RED + error);
+        return false;
+    }
+    
+
+    /**
+     * Convenience methods to find a fireplace.
+     */
+    private Fireplace getFireplace(Location location, boolean fuzzyLookup)
     {
         // Build the list of locations.
         ArrayList<Location> locations = new ArrayList<Location>();
@@ -476,26 +497,13 @@ public class FlooNetwork extends JavaPlugin implements Listener
                 {
                     if (fireplace.contains(loc))
                     {
-                        return true;
+                        return fireplace;
                     }
                 }
             }
         }
-        return false;
+        return null;
     }
-
-    /**
-     * Convenience method to send an error message to the user.
-     */
-    private boolean sendError(CommandSender sender, String error)
-    {
-        sender.sendMessage(ChatColor.RED + error);
-        return false;
-    }
-
-    /**
-     * Convenience method to find a fireplace.
-     */
     private Fireplace getFireplace(OfflinePlayer player, String name)
     {
         if (fireplaces.containsKey(player) && fireplaces.get(player).containsKey(name))
