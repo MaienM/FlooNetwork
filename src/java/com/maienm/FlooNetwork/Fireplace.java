@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.Set;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.entity.Player;
 import org.bukkit.material.Sign;
 
 public class Fireplace
@@ -40,7 +40,7 @@ public class Fireplace
 	/**
 	 * The owner of the fireplace.
 	 */
-	public Player owner = null;
+	public OfflinePlayer owner = null;
 
 	/**
 	 * The name of the fireplace.
@@ -91,8 +91,17 @@ public class Fireplace
 		Fireplace fp = null;
 
 		// Get the sign data.
-		Block block = location.getBlock();
-		Sign sign = (Sign) block.getState().getData();
+		Block block;
+		Sign sign;
+		try
+		{
+			block = location.getBlock();
+			sign = (Sign) block.getState().getData();
+		}
+		catch (Exception e)
+		{
+			return null;
+		}
 
 		// Determine which block the sign was attached to.
 		Location attached = block.getRelative(sign.getAttachedFace()).getLocation();
@@ -143,12 +152,20 @@ public class Fireplace
 	}
 
 	/**
+	 * Get the location of the sign belonging to this fireplace.
+	 */
+	public Location getSignLocation()
+	{
+		return location.clone().add(xDirection * 3, 1, zDirection * 3);
+	}
+
+	/**
 	 * Print important information about a fireplace.
 	 */
 	public String toString()
 	{
 		return String.format("Fireplace %s by %s, spanning from %d, %d, %d to %d, %d, %d", 
-			name, owner != null ? owner.getDisplayName() : "Unknown",
+			name, owner != null ? owner.getName() : "Unknown",
 			location.getBlockX(), location.getBlockY(), location.getBlockZ(), 
 			location.getBlockX() + xDirection * 3, location.getBlockY(), location.getBlockZ() + zDirection * 3);
 	}

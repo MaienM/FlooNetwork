@@ -4,7 +4,9 @@ import com.maienm.FlooNetwork.Fireplace;
 import java.io.File;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import org.bukkit.Bukkit;
@@ -12,6 +14,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -59,25 +62,116 @@ public class FlooNetwork extends JavaPlugin implements Listener
      * Map of all fireplaces.
      */
     private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
-
+ 
+    /**
+     * On plugin load.
+     */
     @Override
     public void onEnable() 
     {
-        System.out.println("FlooNetwork:");
-
-        // Load the list of fireplaces from the config.
-        config = getConfig();
-        ConfigurationSection fireplaces = config.getConfigurationSection("fireplaces");
-        if (fireplaces != null)
-        {
-            for (String name : fireplaces.getKeys(false))
-            {
-                System.out.println(name);
-            }
-        }
+        // Load the config.
+        reloadConfigCustom();
 
         // Register all event handlers.
         getServer().getPluginManager().registerEvents(this, this);
+    }
+
+    /**
+     * On plugin unload.
+     */
+    @Override
+    public void onDisable()
+    {
+        // Save the config.
+        saveConfigCustom();
+    }
+
+    /**
+     * (Re)loads the config file.
+     */
+    private void reloadConfigCustom()
+    {
+        // Reload the config.
+        reloadConfig();
+        config = getConfig();
+
+        // Load the list of fireplaces from the config.
+        ConfigurationSection cfgFireplaces = config.getConfigurationSection("fireplaces");
+        fireplaces.clear();
+        if (cfgFireplaces != null)
+        {
+            OfflinePlayer player;
+            ConfigurationSection fpConfig;
+            List<Integer> coords;
+            World world;
+            Location location;
+            Fireplace fp;
+
+            // Loop over all players.
+            for (Map.Entry<String, Object> playerEntry : cfgFireplaces.getValues(false).entrySet())
+            {
+                // Get the player object.
+                player = getServer().getOfflinePlayer(playerEntry.getKey());
+                fireplaces.put(player, new HashMap<String, Fireplace>());
+
+                // Loop over this users fireplaces.
+                for (Map.Entry<String, Object> fpEntry : ((ConfigurationSection)playerEntry.getValue()).getValues(false).entrySet())
+                {
+                    // Get the ConfigurationSection.
+                    fpConfig = (ConfigurationSection) fpEntry.getValue();
+
+                    // Read out the location.
+                    coords = fpConfig.getIntegerList("coordinates");
+                    world = getServer().getWorld(fpConfig.getString("world"));
+                    location = new Location(world, coords.get(0), coords.get(1), coords.get(2));
+
+                    // Create the fireplace.
+                    fp = Fireplace.detect(location);
+                    if (fp == null)
+                    {
+                        System.out.println(String.format("Fireplace %s of player %s read from config file is invalid; it has been ignored.", playerEntry.getKey(), fpEntry.getKey()));
+                        continue;
+                    }
+
+                    // Save the fireplace.
+                    fp.owner = player;
+                    fp.name = fpEntry.getKey();
+                    fireplaces.get(player).put(fpEntry.getKey(), fp);
+                }
+            }
+        }
+    }
+
+    /**
+     * Saves the config file.
+     */
+    private void saveConfigCustom()
+    {
+        // Rewrite the fireplaces section.
+        ConfigurationSection cfgFireplaces = config.createSection("fireplaces");
+        ConfigurationSection cfgPlayer;
+        ConfigurationSection cfgFireplace;
+        Location location;
+
+        for (Map.Entry<OfflinePlayer, HashMap<String, Fireplace>> playerEntry : fireplaces.entrySet())
+        {
+            // Create the section for this player.
+            cfgPlayer = cfgFireplaces.createSection(playerEntry.getKey().getName());
+
+            for (Map.Entry<String, Fireplace> fpEntry : playerEntry.getValue().entrySet())
+            {
+                // Create the section for this fireplace.
+                cfgFireplace = cfgPlayer.createSection(fpEntry.getKey());
+
+                // Set the data.
+                location = fpEntry.getValue().getSignLocation();
+                cfgFireplace.set("world", location.getWorld().getName());
+                cfgFireplace.set("coordinates", Arrays.asList(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
+            }
+        }
+
+        // Save the config.
+        saveConfig();
     }
 
     @Override
@@ -93,6 +187,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
             sender.sendMessage("/fn list <player>: List your own fireplaces.");
             sender.sendMessage("/fn listall: List all fireplaces.");
             sender.sendMessage("/fn warpto <fireplace>: Warp to fireplace.");
+            sender.sendMessage("/fn reload: Reload the config.");
             return true;
         }
         else 
@@ -130,6 +225,10 @@ public class FlooNetwork extends JavaPlugin implements Listener
                         sender.sendMessage(ChatColor.RED + "Invalid number of arguments.");
                         return false;
                     }
+                    break;
+
+                case "reload":
+                    reloadConfigCustom();
                     break;
             }
         }
@@ -188,6 +287,9 @@ public class FlooNetwork extends JavaPlugin implements Listener
         if (!fireplaces.containsKey(player))
             fireplaces.put(player, new HashMap<String, Fireplace>());
         fireplaces.get(player).put(name, fireplace);
+
+        // Save the config.
+        saveConfigCustom();
 
         // Notify the player.
         player.sendMessage(ChatColor.BLUE + "Fireplace created");
