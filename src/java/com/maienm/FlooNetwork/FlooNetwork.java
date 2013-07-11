@@ -27,6 +27,7 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.SignChangeEvent;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -220,7 +221,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     }
 
                     // Check permission.
-                    if (subject == sender && !requirePermission(sender, "floonetwork.command.list.self") || !requirePermission(sender, "floonetwork.command.list.other"))
+                    if (!requirePermission(sender, "floonetwork.command.list" + (sender == subject ? "" : ".other")))
                     {
                         return false;
                     }
@@ -242,6 +243,30 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     for (String key : fireplaces.get(subject).keySet())
                     {
                         sender.sendMessage(key);
+                    }
+                    break;
+
+                case "listall":
+                    // Check permission.
+                    if (!requirePermission(sender, "floonetwork.command.list.all"))
+                    {
+                        return false;
+                    }
+
+                    // If more arguments => error.
+                    if (args.size() > 0)
+                    {
+                        return sendError(sender, "Invalid number of arguments.");
+                    }
+
+                    // List all fireplaces.
+                    for (Map.Entry<OfflinePlayer, HashMap<String, Fireplace>> playerEntry : fireplaces.entrySet())
+                    {
+                        sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + playerEntry.getKey().getName());
+                        for (String key : playerEntry.getValue().keySet())
+                        {
+                            sender.sendMessage(key);
+                        }
                     }
                     break;
 
@@ -275,7 +300,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     }
 
                     // Check permission.
-                    if (subject == sender && !requirePermission(sender, "floonetwork.command.warp.self") || !requirePermission(sender, "floonetwork.command.warp.other"))
+                    if (!requirePermission(sender, "floonetwork.command.warp" + (subject == sender ? "" : ".other") + (fp.owner == sender ? "" : ".anywhere")))
                     {
                         return false;
                     }
@@ -332,6 +357,44 @@ public class FlooNetwork extends JavaPlugin implements Listener
             return player;
         }
     }
+
+    /**
+     * Block break event.
+     *
+     * Protects the fireplace when needed.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event)
+    {
+        // Check if the block belongs to a fireplace.
+        Fireplace fp = getFireplace(event.getBlock().getLocation(), false, true);
+        if (fp == null)
+        {
+            return;
+        }
+
+        // Get the player that triggered the event.
+        Player player = event.getPlayer();
+
+        // If the event was not triggered by a player, block it.
+        if (player == null)
+        {
+            event.setCancelled(true);
+            return;
+        }
+
+        // Check the permissions.
+        if (!requirePermission(player, "floonetwork.destroy" + (fp.owner == player ? "" : ".other")))
+        {
+            event.setCancelled(true);
+            return;
+        }
+
+        // Destroy the fireplace.
+        fireplaces.get(fp.owner).remove(fp.name);
+        player.sendMessage(ChatColor.BLUE + String.format("Destroyed fireplace %s%s.", fp.name, fp.owner == player ? "" : "of " + fp.owner.getName()));
+    }
+
     
     /**
      * Sign placement/change event.
@@ -351,9 +414,8 @@ public class FlooNetwork extends JavaPlugin implements Listener
         Player player = event.getPlayer();
 
         // Check whether the user has the required permissions.
-        if (!player.hasPermission("floonetwork.createFireplace"))
+        if (!requirePermission(player, "floonetwork.create"))
         {
-            sendError(player, "You do not have permission to create a fireplace.");
             rejectSign(event);
             return;
         }
@@ -437,7 +499,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check if the source of damage is a fireplace.
         Player player = (Player) event.getEntity();
-        if (getFireplace(player.getLocation(), true) == null)
+        if (getFireplace(player.getLocation(), true, false) == null)
         {
             return;
         }
@@ -469,7 +531,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check whether the player is in a fireplace.
         Player player = event.getPlayer();
-        Fireplace fp = getFireplace(player.getLocation(), true);
+        Fireplace fp = getFireplace(player.getLocation(), true, false);
         if (fp == null)
         {
             return;
@@ -479,9 +541,8 @@ public class FlooNetwork extends JavaPlugin implements Listener
         event.setCancelled(true);
 
         // Check whether the user has the required permissions.
-        if (!player.hasPermission("floonetwork.useFireplace"))
+        if (!requirePermission(player, "floonetwork.use"))
         {
-            sendError(player, "You do not have permission to use a FlooNetwork fireplace.");
             return;
         }
 
@@ -523,7 +584,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
     /**
      * Convenience methods to find a fireplace.
      */
-    private Fireplace getFireplace(Location location, boolean fuzzyLookup)
+    private Fireplace getFireplace(Location location, boolean fuzzyLookup, boolean includeSign)
     {
         // Build the list of locations.
         ArrayList<Location> locations = new ArrayList<Location>();
@@ -544,7 +605,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                 // Loop over the locations.
                 for (Location loc : locations)
                 {
-                    if (fireplace.contains(loc))
+                    if (fireplace.contains(loc) || (includeSign && fireplace.getSignLocation().equals(loc)))
                     {
                         return fireplace;
                     }
