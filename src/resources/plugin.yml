@@ -8,18 +8,61 @@ description: >
              Move around the way REAL wizzards do!
 commands:
   fn:
-    description: Get FlooNetwork info
-    permission: floonetwork.use
+    description: Get FlooNetwork info.
+    permission: floonetwork.command
 permissions:
   floonetwork.*:
-    description: all permissions
+    description: All Floo Network permissions.
     children:
       floonetwork.use: true
       floonetwork.create: true
-      floonetwork.destroy: true
+      floonetwork.destroy.other: true
+      floonetwork.command.*: true
   floonetwork.use:
-    description: Can use a Floo Network fireplace
-  floonetwork.createFireplace:
-    description: Can create a Floo Network fireplace
-  floonetwork.destroyFireplace:
-    description: Can destroy a Floo Network fireplace
+    description: Can use a Floo Network fireplace.
+  floonetwork.create:
+    description: Can create a Floo Network fireplace.
+  floonetwork.destroy:
+    description: Can destroy a Floo Network fireplace made by themself.
+  floonetwork.destroy.other:
+    description: Can destroy any Floo Network fireplace.
+    children: 
+      floonetwork.destroy: true
+  floonetwork.command:
+    description: Can use the /fn command. This command makes no sense without any of the floonetwork.command.* permissions.
+  floonetwork.command.*:
+    description: Can use any Floo Network command.
+    children:
+      floonetwork.command: true
+      floonetwork.command.list.all: true
+      floonetwork.command.warp.other.anywhere: true
+      floonetwork.command.reload: true
+  floonetwork.command.list:
+    description: Can get a list of their own Floo Network fireplaces.
+  floonetwork.command.list.other:
+    description: Can get a list of all Floo Network fireplaces of any user.
+    children: 
+      floonetwork.command.list: true
+  floonetwork.command.list.all:
+    description: Can get a list of all Floo Network fireplaces.
+    children: 
+      floonetwork.command.list: true
+      floonetwork.command.list.other: true
+  floonetwork.command.warp:
+    description: Can warp themself to a Floo Network fireplace made by themself.
+  floonetwork.command.warp.anywhere:
+    description: Can warp themself to any Floo Network fireplace.
+    children: 
+      floonetwork.command.warp: true
+  floonetwork.command.warp.other:
+    description: Can warp other players to a Floo Network fireplace made by themself.
+    children: 
+      floonetwork.command.warp: true
+  floonetwork.command.warp.other.anywhere:
+    description: Can warp other players to any Floo Network fireplace.
+    children: 
+      floonetwork.command.warp: true
+      floonetwork.command.warp.anywhere: true
+      floonetwork.command.warp.other: true
+  floonetwork.command.reload:
+    description: Can reload the Floo Network config.

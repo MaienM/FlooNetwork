@@ -191,12 +191,18 @@ public class FlooNetwork extends JavaPlugin implements Listener
             String version = getDescription().getVersion();
             sender.sendMessage(ChatColor.GOLD + "FlooNetwork " + ChatColor.BLUE + version + ChatColor.GOLD + " by MaienM");
             sender.sendMessage("--------------------");
-            sender.sendMessage("/fn list: List your own fireplaces.");
-            sender.sendMessage("/fn list <player>: List the fireplaces of <player>.");
-            sender.sendMessage("/fn listall: List all fireplaces.");
-            sender.sendMessage("/fn warpto <player> <fireplace>: Warp self to <fireplace> of <player>.");
-            sender.sendMessage("/fn warpto <player> <fireplace> <target>: Warp <target> to <fireplace> of <player>.");
-            sender.sendMessage("/fn reload: Reload the config.");
+            if (sender.hasPermission("floonetwork.command.list"))
+                sender.sendMessage("/fn list: List your own fireplaces.");
+            if (sender.hasPermission("floonetwork.command.list.other"))
+                sender.sendMessage("/fn list <sender>: List the fireplaces of <player>.");
+            if (sender.hasPermission("floonetwork.command.list.all"))
+                sender.sendMessage("/fn listall: List all fireplaces.");
+            if (sender.hasPermission("floonetwork.command.warp"))
+                sender.sendMessage("/fn warpto <sender> <fireplace>: Warp self to <fireplace> of <player>.");
+            if (sender.hasPermission("floonetwork.command.warp.other"))
+                sender.sendMessage("/fn warpto <sender> <fireplace> <target>: Warp <target> to <fireplace> of <player>.");
+            if (sender.hasPermission("floonetwork.command.reload"))
+                sender.sendMessage("/fn reload: Reload the config.");
             return true;
         }
         else 
@@ -213,14 +219,38 @@ public class FlooNetwork extends JavaPlugin implements Listener
                         return false;
                     }
 
+                    // Check permission.
+                    if (subject == sender && !requirePermission(sender, "floonetwork.command.list.self") || !requirePermission(sender, "floonetwork.command.list.other"))
+                    {
+                        return false;
+                    }
+
                     // If more arguments => error.
                     if (args.size() > 0)
                     {
                         return sendError(sender, "Invalid number of arguments.");
                     }
+
+                    // Check if user has any fireplaces.
+                    if (!fireplaces.containsKey(subject))
+                    {
+                        return sendError(sender, "No fireplaces found.");
+                    }
+
+                    // List all fireplaces.
+                    sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + subject.getName());
+                    for (String key : fireplaces.get(subject).keySet())
+                    {
+                        sender.sendMessage(key);
+                    }
                     break;
 
                 case "reload":
+                    if (!requirePermission(sender, "floonetwork.command.reload"))
+                    {
+                        return false;
+                    }
+
                     reloadConfigCustom();
                     break;
 
@@ -240,6 +270,12 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     // Get the subject.
                     subject = getSubject(sender, args);
                     if (subject == null)
+                    {
+                        return false;
+                    }
+
+                    // Check permission.
+                    if (subject == sender && !requirePermission(sender, "floonetwork.command.warp.self") || !requirePermission(sender, "floonetwork.command.warp.other"))
                     {
                         return false;
                     }
@@ -469,7 +505,20 @@ public class FlooNetwork extends JavaPlugin implements Listener
         sender.sendMessage(ChatColor.RED + error);
         return false;
     }
-    
+
+    /**
+     * Convenience method to check for permission.
+     */
+    private boolean requirePermission(CommandSender sender, String permission)
+    {
+        if (sender.hasPermission(permission))
+        {
+            return true;
+        }
+
+        sendError(sender, "You do not have the required permission to do this: " + ChatColor.BLUE + permission);
+        return false;
+    }
 
     /**
      * Convenience methods to find a fireplace.
