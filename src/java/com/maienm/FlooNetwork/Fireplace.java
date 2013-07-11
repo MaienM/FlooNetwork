@@ -30,6 +30,24 @@ public class Fireplace
 	private Location location = null;
 
 	/**
+	 * The offsets for the position the bricks should be in as seen from the bottom left block.
+	 *
+	 * First int is the offset in x/z direction, second in in y direction.
+	 */
+	private static final Set<int[]> MATERIAL_OFFSETS = new HashSet<int[]>(Arrays.asList(new int[][] {
+		{0, 0},
+		{0, 1},
+		{0, 2},
+		{1, 2},
+		{1, 3},
+		{2, 2},
+		{2, 3},
+		{3, 2},
+		{3, 1},
+		{3, 0},
+	}));
+
+	/**
 	 * The x direction of the fireplace.
 	 */
 	private int xDirection = 0;
@@ -62,25 +80,19 @@ public class Fireplace
 	 */
 	private static Fireplace detectAt(Location location, int x, int z)
 	{
-		Location loc = location.clone();
-		if (isValidMaterial(loc) && 
-		    isValidMaterial(loc.add(0, 1, 0)) &&
-		    isValidMaterial(loc.add(0, 1, 0)) &&
-		    isValidMaterial(loc.add(x, 0, z)) &&
-		    isValidMaterial(loc.add(0, 1, 0)) &&
-		    isValidMaterial(loc.add(x, -1, z)) &&
-		    isValidMaterial(loc.add(0, 1, 0)) &&
-		    isValidMaterial(loc.add(x, -1, z)) &&
-		    isValidMaterial(loc.add(0, -1, 0)) &&
-		    isValidMaterial(loc.add(0, -1, 0)))
+		for (int[] offset : MATERIAL_OFFSETS)
 		{
-			Fireplace fp = new Fireplace();
-			fp.location = location;
-			fp.xDirection = x;
-			fp.zDirection = z;
-			return fp;
+			if (!isValidMaterial(location.clone().add(offset[0] * x, offset[1], offset[0] * z)))
+			{
+				return null;
+			}
 		}
-		return null;
+
+		Fireplace fp = new Fireplace();
+		fp.location = location;
+		fp.xDirection = x;
+		fp.zDirection = z;
+		return fp;
 	}
 
 	/**
@@ -133,24 +145,46 @@ public class Fireplace
 
 	/**
 	 * Check if a given location is part of a fireplace.
+	 *
+	 * @param location The location to check.
+	 * @param includeMaterial Whether to consider the blocks the furnace is made of.
+	 * @param includeSign Whether to consider the sign.
+	 * @param includeAir Whether to consider the air/fire in the furnace.
 	 */
-	public boolean contains(Location location)
+	public boolean contains(Location location, boolean includeMaterial, boolean includeSign, boolean includeAir)
 	{
-		int x = this.location.getBlockX();
-		int y = this.location.getBlockY();
-		int z = this.location.getBlockZ();
-		int x1 = Math.min(x, x + 3 * xDirection);
-		int x2 = Math.max(x, x + 3 * xDirection);
-		int z1 = Math.min(z, z + 3 * zDirection);
-		int z2 = Math.max(z, z + 3 * zDirection);
+		if (includeMaterial)
+		{
+			for (int[] offset : MATERIAL_OFFSETS)
+			{
+				if (this.location.clone().add(offset[0] * xDirection, offset[1], offset[0] * zDirection).equals(location))
+				{
+					return true;
+				}
+			}
+		}
 
-		int lx = location.getBlockX();
-		int ly = location.getBlockY();
-		int lz = location.getBlockZ();
+		if (includeSign)
+		{
+			if (location.equals(getSignLocation()))
+			{
+				return true;
+			}
+		}
 
-		return (x1 <= lx && lx <= x2 &&
-		        z1 <= lz && lz <= z2 &&
-			y >= ly && y <= ly + 3);
+		if (includeAir)
+		{
+			Location loc = this.location.clone();
+			if (location.equals(loc.add(xDirection, 0, zDirection)) ||
+			    location.equals(loc.add(0, 1, 0)) ||
+			    location.equals(loc.add(xDirection, -1, zDirection)) ||
+			    location.equals(loc.add(0, 1, 0)))
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**

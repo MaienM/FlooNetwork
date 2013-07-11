@@ -367,7 +367,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
     public void onBlockBreak(BlockBreakEvent event)
     {
         // Check if the block belongs to a fireplace.
-        Fireplace fp = getFireplace(event.getBlock().getLocation(), false, true);
+        Fireplace fp = getFireplace(event.getBlock().getLocation(), false, true, true, false);
         if (fp == null)
         {
             return;
@@ -395,7 +395,6 @@ public class FlooNetwork extends JavaPlugin implements Listener
         player.sendMessage(ChatColor.BLUE + String.format("Destroyed fireplace %s%s.", fp.name, fp.owner == player ? "" : "of " + fp.owner.getName()));
     }
 
-    
     /**
      * Sign placement/change event.
      *
@@ -499,7 +498,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check if the source of damage is a fireplace.
         Player player = (Player) event.getEntity();
-        if (getFireplace(player.getLocation(), true, false) == null)
+        if (getFireplace(player.getLocation(), true, false, false, true) == null)
         {
             return;
         }
@@ -531,7 +530,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Check whether the player is in a fireplace.
         Player player = event.getPlayer();
-        Fireplace fp = getFireplace(player.getLocation(), true, false);
+        Fireplace fp = getFireplace(player.getLocation(), true, false, false, true);
         if (fp == null)
         {
             return;
@@ -583,8 +582,14 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
     /**
      * Convenience methods to find a fireplace.
+     *
+     * @param location The location to check.
+     * @param fuzzyLookup If true, the given location will be checked in a less strict way. This is useful for if the position is not an exact position (such as a block has). For example, the position from an entity.
+     * @param includeMaterial See Fireplace#contains.
+     * @param includeSign See Fireplace#contains.
+     * @param includeAir See Fireplace#contains.
      */
-    private Fireplace getFireplace(Location location, boolean fuzzyLookup, boolean includeSign)
+    private Fireplace getFireplace(Location location, boolean fuzzyLookup, boolean includeMaterial, boolean includeSign, boolean includeAir)
     {
         // Build the list of locations.
         ArrayList<Location> locations = new ArrayList<Location>();
@@ -605,7 +610,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                 // Loop over the locations.
                 for (Location loc : locations)
                 {
-                    if (fireplace.contains(loc) || (includeSign && fireplace.getSignLocation().equals(loc)))
+                    if (fireplace.contains(loc, includeMaterial, includeSign, includeAir))
                     {
                         return fireplace;
                     }
