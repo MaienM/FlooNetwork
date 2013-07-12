@@ -2,12 +2,12 @@ package com.maienm.FlooNetwork;
 
 import com.maienm.FlooNetwork.Fireplace;
 import java.io.File;
-import java.util.Arrays;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -16,6 +16,7 @@ import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.Sign;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,8 +27,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
-import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.SignChangeEvent;
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -384,7 +385,8 @@ public class FlooNetwork extends JavaPlugin implements Listener
         }
 
         // Check the permissions.
-        if (!requirePermission(player, "floonetwork.destroy" + (fp.owner == player ? "" : ".other")))
+        boolean isOwner = fp.owner.equals((OfflinePlayer) player);
+        if (!requirePermission(player, "floonetwork.destroy" + (isOwner ? "" : ".other")))
         {
             event.setCancelled(true);
             return;
@@ -392,7 +394,15 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Destroy the fireplace.
         fireplaces.get(fp.owner).remove(fp.name);
-        player.sendMessage(ChatColor.BLUE + String.format("Destroyed fireplace %s%s.", fp.name, fp.owner == player ? "" : "of " + fp.owner.getName()));
+        player.sendMessage(ChatColor.BLUE + String.format("Destroyed fireplace %s%s.", fp.name, isOwner ? "" : " of " + fp.owner.getName()));
+
+        // Mark the sign as deactivated.
+        Sign sign = (Sign)fp.getSignLocation().getBlock().getState();
+        sign.setLine(0, ChatColor.RED + sign.getLine(0));
+        sign.setLine(1, ChatColor.RED + sign.getLine(1));
+        sign.setLine(2, ChatColor.RED + sign.getLine(2));
+        sign.setLine(3, ChatColor.RED + "DEACTIVATED");
+        sign.update();
     }
 
     /**
