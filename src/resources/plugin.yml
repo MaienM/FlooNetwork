@@ -14,42 +14,75 @@ permissions:
   floonetwork.*:
     description: All Floo Network permissions.
     children:
-      floonetwork.use: true
+      floonetwork.use.*: true
+      floonetwork.travel.*: true
       floonetwork.create: true
-      floonetwork.destroy.other: true
+      floonetwork.destroy.*: true
       floonetwork.command.*: true
+  floonetwork.user:
+    description: Sensible defaults for users.
+    children:
+      floonetwork.use.*: true
+      floonetwork.travel: true
+      floonetwork.create: true
+      floonetwork.destroy: true
+      floonetwork.command.list: true
+  floonetwork.admin:
+    description: Sensible defauls for admins.
+    children:
+      floonetwork.*: true
+  floonetwork.use.*:
+    description: Can use any Floo Network fireplace.
+    children:
+      floonetwork.use.other: true
   floonetwork.use:
-    description: Can use a Floo Network fireplace.
+    description: Can use a Floo Network fireplace made by themself.
+  floonetwork.use.other:
+    description: Can use any Floo Network fireplace.
+    children:
+      floonetwork.use: true
+  floonetwork.travel.*:
+    description: Can travel to any Floo Network fireplace.
+    children:
+      floonetwork.travel.other: true
+  floonetwork.travel:
+    description: Can travel to a Floo Network fireplace made by themself.
+  floonetwork.travel.other:
+    description: Can travel to any Floo Network fireplace.
+    children:
+      floonetwork.travel: true
   floonetwork.create:
     description: Can create a Floo Network fireplace.
+  floonetwork.destroy.*:
+    description: Can destroy any Floo Network fireplace.
+    children: 
+      floonetwork.destroy.other: true
   floonetwork.destroy:
     description: Can destroy a Floo Network fireplace made by themself.
   floonetwork.destroy.other:
     description: Can destroy any Floo Network fireplace.
     children: 
       floonetwork.destroy: true
-  floonetwork.command:
-    description: Can use the /fn command. This command makes no sense without any of the floonetwork.command.* permissions.
   floonetwork.command.*:
     description: Can use any Floo Network command.
     children:
-      floonetwork.command: true
-      floonetwork.command.list.all: true
-      floonetwork.command.warp.other.anywhere: true
+      floonetwork.command.list: true
+      floonetwork.command.warp.*: true
       floonetwork.command.reload: true
+  floonetwork.command:
+    description: Can use the /fn command. This command makes no sense without any of the floonetwork.command.* permissions.
   floonetwork.command.list:
-    description: Can get a list of their own Floo Network fireplaces.
-  floonetwork.command.list.other:
-    description: Can get a list of all Floo Network fireplaces of any user.
+    description: Can get a list of all Floo Network fireplaces they have access to.
+    children:
+      floonetwork.command: true
+  floonetwork.command.warp.*:
+    description: Can warp any player to any Floo Network fireplace.
     children: 
-      floonetwork.command.list: true
-  floonetwork.command.list.all:
-    description: Can get a list of all Floo Network fireplaces.
-    children: 
-      floonetwork.command.list: true
-      floonetwork.command.list.other: true
+      floonetwork.command.warp.other.anywhere: true
   floonetwork.command.warp:
     description: Can warp themself to a Floo Network fireplace made by themself.
+    children:
+      floonetwork.command: true
   floonetwork.command.warp.anywhere:
     description: Can warp themself to any Floo Network fireplace.
     children: 
@@ -66,3 +99,5 @@ permissions:
       floonetwork.command.warp.other: true
   floonetwork.command.reload:
     description: Can reload the Floo Network config.
+    children:
+      floonetwork.command: true

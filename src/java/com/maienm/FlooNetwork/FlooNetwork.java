@@ -64,7 +64,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
      * Map of all fireplaces.
      */
     private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
- 
+
     /**
      * On plugin load.
      */
@@ -194,11 +194,11 @@ public class FlooNetwork extends JavaPlugin implements Listener
             sender.sendMessage(ChatColor.GOLD + "FlooNetwork " + ChatColor.BLUE + version + ChatColor.GOLD + " by MaienM");
             sender.sendMessage("--------------------");
             if (sender.hasPermission("floonetwork.command.list"))
+            {
                 sender.sendMessage("/fn list: List your own fireplaces.");
-            if (sender.hasPermission("floonetwork.command.list.other"))
-                sender.sendMessage("/fn list <sender>: List the fireplaces of <player>.");
-            if (sender.hasPermission("floonetwork.command.list.all"))
-                sender.sendMessage("/fn listall: List all fireplaces.");
+                sender.sendMessage("/fn list <sender>: List the fireplaces of <player> you have access to.");
+                sender.sendMessage("/fn listall: List all fireplaces you have access to.");
+            }
             if (sender.hasPermission("floonetwork.command.warp"))
                 sender.sendMessage("/fn warpto <sender> <fireplace>: Warp self to <fireplace> of <player>.");
             if (sender.hasPermission("floonetwork.command.warp.other"))
@@ -222,7 +222,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     }
 
                     // Check permission.
-                    if (!requirePermission(sender, "floonetwork.command.list" + (sender == subject ? "" : ".other")))
+                    if (!requirePermission(sender, "floonetwork.command.list"))
                     {
                         return false;
                     }
@@ -249,7 +249,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
                 case "listall":
                     // Check permission.
-                    if (!requirePermission(sender, "floonetwork.command.list.all"))
+                    if (!requirePermission(sender, "floonetwork.command.list"))
                     {
                         return false;
                     }
@@ -546,11 +546,11 @@ public class FlooNetwork extends JavaPlugin implements Listener
             return;
         }
 
-        // Block the event, in case the catalyst is set to something place/useable (such as redstone).
+        // Block the event, in case the catalyst is set to something placeable/useable (such as redstone).
         event.setCancelled(true);
 
         // Check whether the user has the required permissions.
-        if (!requirePermission(player, "floonetwork.use"))
+        if (!requirePermission(player, "floonetwork.use" + (fp.owner.equals((OfflinePlayer)player) ? "" : ".other")))
         {
             return;
         }
@@ -559,6 +559,15 @@ public class FlooNetwork extends JavaPlugin implements Listener
         if (!fp.isLighted())
         {
             sendError(player, "The fireplace is not burning. What a poor excuse for a fireplace it is.");
+            return;
+        }
+
+        // Show  menu.
+        // @TODO
+
+        // Check permission.
+        if (!fp.owner.equals(player) && !requirePermission(player, "floonetwork.use.other"))
+        {
             return;
         }
 
