@@ -1,5 +1,7 @@
 package com.maienm.FlooNetwork;
 
+import com.griefcraft.lwc.LWC;
+import com.griefcraft.lwc.LWCPlugin;
 import com.maienm.FlooNetwork.Fireplace;
 import java.io.File;
 import java.util.ArrayList;
@@ -33,6 +35,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class FlooNetwork extends JavaPlugin implements Listener 
@@ -66,6 +69,11 @@ public class FlooNetwork extends JavaPlugin implements Listener
     private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
 
     /**
+     *  LWC plugin (protection)
+     */
+    private LWC lwc;
+ 
+    /**
      * On plugin load.
      */
     @Override
@@ -73,6 +81,13 @@ public class FlooNetwork extends JavaPlugin implements Listener
     {
         // Load the config.
         reloadConfigCustom();
+
+        // Get LWC, if it exists.
+        Plugin plugLWC = Bukkit.getPluginManager().getPlugin("LWC");
+        if (plugLWC != null)
+        {
+            lwc = ((LWCPlugin)plugLWC).getLWC();
+        }
 
         // Register all event handlers.
         getServer().getPluginManager().registerEvents(this, this);
