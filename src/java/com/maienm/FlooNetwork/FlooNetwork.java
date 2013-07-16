@@ -581,14 +581,42 @@ public class FlooNetwork extends JavaPlugin implements Listener
         // @TODO
 
         // Check permission.
-        if (!fp.owner.equals(player) && !requirePermission(player, "floonetwork.use.other"))
+        if (!hasAccess(player, fp))
         {
+            sendError(player, "You do not have permission to access this fireplace.");
             return;
         }
 
         // Consume item.
         ItemStack item = event.getItem();
         item.setAmount(item.getAmount() - 1);
+    }
+
+    /**
+     * Convenience method to check whether a player has access to a fireplace.
+     */
+    private boolean hasAccess(Player player, Fireplace fireplace)
+    {
+        // Check whether the user has the required permission.
+        if (!player.hasPermission("floonetwork.travel" + (fireplace.owner.equals((OfflinePlayer)player) ? "" : "other")))
+        {
+            return false;
+        }
+
+        // The owner of a fireplace always has access.
+        if (fireplace.owner.equals((OfflinePlayer)player))
+        {
+            return true;
+        }
+
+        // If LWC is present, use LWC.
+        if (lwc != null)
+        {
+            return lwc.canAccessProtection(player, fireplace.getSignLocation().getBlock());
+        }
+
+        // No protection plugin was found, so the user is granted access on the merit of having the required permission.
+        return true;
     }
 
     /**
@@ -627,13 +655,16 @@ public class FlooNetwork extends JavaPlugin implements Listener
     {
         // Build the list of locations.
         ArrayList<Location> locations = new ArrayList<Location>();
-        locations.add(location.clone());
         if (fuzzyLookup)
         {
             locations.add(location.clone().add(0.5,  0, 0));
             locations.add(location.clone().add(-0.5, 0, 0.5));
             locations.add(location.clone().add(-0.5, 0, -0.5));
             locations.add(location.clone().add(0,    0, -0.5));
+        }
+        else
+        {
+            locations.add(location.clone());
         }
 
         // Loop over the fireplaces.
