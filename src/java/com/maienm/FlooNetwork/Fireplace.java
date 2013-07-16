@@ -4,9 +4,11 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
@@ -233,6 +235,33 @@ public class Fireplace
 		loc.add(xDirection * 1.5 - zDirection + 0.5, 0, zDirection * 1.5 + xDirection + 0.5);
 		loc.setYaw((float)(xDirection - 1) * 90 + (zDirection == 1 ? 180 : 0));
 		player.teleport(loc, TeleportCause.PLUGIN);
+	}
+
+	private void playEffectTimes(World world, Location location, Effect effect, int data, int times)
+	{
+        for (int i=0; i<times; i++)
+        {
+            world.playEffect(location, effect, data);
+        }
+	}
+
+	/**
+	 * Play the travel effect in this fireplace.
+	 */
+	public void playEffect()
+	{
+		// Play the fire particles effect.
+		Location loc = location.clone();
+		World world = loc.getWorld();
+
+		loc.add(xDirection, 0, zDirection);
+		playEffectTimes(world, loc, Effect.MOBSPAWNER_FLAMES, 0, 5);
+		loc.add(0, 1, 0);
+		playEffectTimes(world, loc, Effect.MOBSPAWNER_FLAMES, 0, 5);
+		loc.add(xDirection, -1, zDirection);
+		playEffectTimes(world, loc, Effect.MOBSPAWNER_FLAMES, 0, 5);
+		loc.add(0, 1, 0);
+		playEffectTimes(world, loc, Effect.MOBSPAWNER_FLAMES, 0, 5);
 	}
 
 	/**
