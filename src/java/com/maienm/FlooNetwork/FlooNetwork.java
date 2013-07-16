@@ -316,7 +316,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     }
 
                     // Check permission.
-                    if (!requirePermission(sender, "floonetwork.command.warp" + (subject == sender ? "" : ".other") + (fp.owner == sender ? "" : ".anywhere")))
+                    if (!requirePermission(sender, "floonetwork.command.warp" + (subject.equals(sender) ? "" : ".other") + (fp.isOwner((Player)sender) ? "" : ".anywhere")))
                     {
                         return false;
                     }
@@ -400,8 +400,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         }
 
         // Check the permissions.
-        boolean isOwner = fp.owner.equals((OfflinePlayer) player);
-        if (!requirePermission(player, "floonetwork.destroy" + (isOwner ? "" : ".other")))
+        if (!requirePermission(player, "floonetwork.destroy" + (fp.isOwner(player) ? "" : ".other")))
         {
             event.setCancelled(true);
             return;
@@ -409,7 +408,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         // Destroy the fireplace.
         fireplaces.get(fp.owner).remove(fp.name);
-        player.sendMessage(ChatColor.BLUE + String.format("Destroyed fireplace %s%s.", fp.name, isOwner ? "" : " of " + fp.owner.getName()));
+        player.sendMessage(ChatColor.BLUE + String.format("Destroyed fireplace %s%s.", fp.name, fp.isOwner(player) ? "" : " of " + fp.owner.getName()));
 
         // Mark the sign as deactivated.
         Sign sign = (Sign)fp.getSignLocation().getBlock().getState();
@@ -565,7 +564,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         event.setCancelled(true);
 
         // Check whether the user has the required permissions.
-        if (!requirePermission(player, "floonetwork.use" + (fp.owner.equals((OfflinePlayer)player) ? "" : ".other")))
+        if (!requirePermission(player, "floonetwork.use" + (fp.isOwner(player) ? "" : ".other")))
         {
             return;
         }
@@ -598,13 +597,13 @@ public class FlooNetwork extends JavaPlugin implements Listener
     private boolean hasAccess(Player player, Fireplace fireplace)
     {
         // Check whether the user has the required permission.
-        if (!player.hasPermission("floonetwork.travel" + (fireplace.owner.equals((OfflinePlayer)player) ? "" : "other")))
+        if (!player.hasPermission("floonetwork.travel" + (fireplace.isOwner(player) ? "" : "other")))
         {
             return false;
         }
 
         // The owner of a fireplace always has access.
-        if (fireplace.owner.equals((OfflinePlayer)player))
+        if (fireplace.isOwner(player))
         {
             return true;
         }

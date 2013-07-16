@@ -197,6 +197,16 @@ public class Fireplace
 	}
 
 	/**
+	 * Check whether a player is the owner of this fireplace.
+	 *
+	 * @param player The player to check.
+	 */
+	public boolean isOwner(OfflinePlayer player)
+	{
+		return owner.equals(player);
+	}
+
+	/**
 	 * Check whether a fireplace is lighted.
 	 */
 	public boolean isLighted()
