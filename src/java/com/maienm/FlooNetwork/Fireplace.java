@@ -153,6 +153,15 @@ public class Fireplace
 	 */
 	public boolean contains(Location location, boolean includeMaterial, boolean includeSign, boolean includeAir)
 	{
+		// Round off the coordinates.
+		location.setX(location.getBlockX());
+		location.setY(location.getBlockY());
+		location.setZ(location.getBlockZ());
+
+		// Zero out the yaw and pitch.
+		location.setPitch(0);
+		location.setYaw(0);
+
 		if (includeMaterial)
 		{
 			for (int[] offset : MATERIAL_OFFSETS)
