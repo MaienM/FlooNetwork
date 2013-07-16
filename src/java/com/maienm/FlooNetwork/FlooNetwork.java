@@ -6,11 +6,13 @@ import com.maienm.FlooNetwork.Fireplace;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -35,6 +37,10 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.LazyMetadataValue.CacheStrategy;
+import org.bukkit.metadata.LazyMetadataValue;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -48,6 +54,16 @@ public class FlooNetwork extends JavaPlugin implements Listener
      * The material used to travel.
      */
     final protected Material TRAVALCATALYST = Material.REDSTONE;
+
+    /**
+     * The metadata key for fire invulnerability.
+     */
+    final protected String FIREINV_METADATA_KEY = "floonetworkFireInvulnerability";
+
+    /**
+     * The duration for fire invulnerability.
+     */
+    final protected int FIREINV_DURATION = 1;
 
     /**
      * The list of all DamageCause types we want to ignore when in a fireplace.
@@ -256,9 +272,12 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
                     // List all fireplaces.
                     sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + subject.getName());
-                    for (String key : fireplaces.get(subject).keySet())
+                    for (Map.Entry<String, Fireplace> entry : fireplaces.get(subject).entrySet())
                     {
-                        sender.sendMessage(key);
+                        if (hasAccess((Player)sender, entry.getValue()))
+                        {
+                            sender.sendMessage(entry.getKey());
+                        }
                     }
                     break;
 
@@ -279,9 +298,12 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     for (Map.Entry<OfflinePlayer, HashMap<String, Fireplace>> playerEntry : fireplaces.entrySet())
                     {
                         sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + playerEntry.getKey().getName());
-                        for (String key : playerEntry.getValue().keySet())
+                        for (Map.Entry<String, Fireplace> fpEntry : playerEntry.getValue().entrySet())
                         {
-                            sender.sendMessage(key);
+                            if (hasAccess((Player)sender, fpEntry.getValue()))
+                            {
+                                sender.sendMessage(fpEntry.getKey());
+                            }
                         }
                     }
                     break;
@@ -319,6 +341,10 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     if (!requirePermission(sender, "floonetwork.command.warp" + (subject.equals(sender) ? "" : ".other") + (fp.isOwner((Player)sender) ? "" : ".anywhere")))
                     {
                         return false;
+                    }
+                    if (!hasAccess((Player)sender, fp))
+                    {
+                        return sendError(sender, "You do not have access to that fireplace.");
                     }
 
                     // If more arguments => error.
@@ -520,16 +546,45 @@ public class FlooNetwork extends JavaPlugin implements Listener
             return;
         }
 
-        // Check if the source of damage is a fireplace.
-        Player player = (Player) event.getEntity();
-        if (getFireplace(player.getLocation(), true, false, false, true) == null)
+        // Check if the player is still marked as invulnerable.
+        boolean invulnerable = false;
+        boolean valid = false;
+        final Player player = (Player) event.getEntity();
+        for (MetadataValue val : player.getMetadata(FIREINV_METADATA_KEY))
         {
-            return;
+            if (val.getOwningPlugin().equals(this))
+            {
+                boolean[] res = (boolean[])val.value();
+                invulnerable = res[0];
+                valid = res[1];
+            }
+        }
+
+        // If the result is no longer valid, refresh it.
+        if (!valid)
+        {
+            invulnerable = getFireplace(player.getLocation(), true, false, false, true) != null;
+
+            // Cache the result.
+            final Plugin plug = this;
+            final Date validTo = new Date();
+            final boolean invuln = invulnerable;
+            validTo.setTime(validTo.getTime() + FIREINV_DURATION);
+            player.setMetadata(FIREINV_METADATA_KEY, new LazyMetadataValue(this, CacheStrategy.NEVER_CACHE, new Callable<Object>() 
+            {
+                public Object call()
+                {
+                    return new boolean[]{invuln, validTo.after(new Date())};
+                }
+            }));
         }
 
         // Cancel the damage.
-        event.setCancelled(true);
-        event.getEntity().setFireTicks(0);
+        if (invulnerable)
+        {
+            event.setCancelled(true);
+            event.getEntity().setFireTicks(0);
+        }
     }
 
     /**
@@ -582,7 +637,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
         // Check permission.
         if (!hasAccess(player, fp))
         {
-            sendError(player, "You do not have permission to access this fireplace.");
+            sendError(player, "You do not have access to that fireplace.");
             return;
         }
 
