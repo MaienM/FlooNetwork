@@ -1,22 +1,61 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
+    <!-- Project data -->
     <groupId>me.maienm.FlooNetwork</groupId>
     <artifactId>FlooNetwork</artifactId>
     <version>0.0.1</version>
-    <name>FlooNetwork</name>
-    <url></url>
+
+    <name>Floo Network</name>
+    <description>Brings J.K. Rowling's Floo Network to Mojang's Minecraft.</description>
+    <url>https://github.com/MaienM/FlooNetwork/</url>
+    <inceptionYear>2013</inceptionYear>
+
+    <!-- License -->
+    <licenses>
+        <license>
+            <name>BSD 3-Clause License</name>
+            <url>http://opensource.org/licenses/BSD-3-Clause/</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+
+    <!-- Developer -->
+    <developers>
+        <developer>
+            <id>MaienM</id>
+            <name>Michon van Dooren</name>
+            <email>michon1992@gmail.com</email>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>Europe/Amsterdam</timezone>
+        </developer>
+    </developers>
+
+    <!-- Ticket system -->
+    <issueManagement>
+        <system>Bukkit</system>
+        <url>http://dev.bukkit.org/bukkit-plugins/floonetwork/tickets/</url>
+    </issueManagement>
+
+    <!-- Source control -->
+    <scm>
+        <connection>scm:git:https://github.com/MaienM/FlooNetwork.git</connection>
+        <developerConnection>scm:git:https://github.com/MaienM/FlooNetwork.git</developerConnection>
+        <tag>HEAD</tag>
+        <url>https://github.com/MaienM/FlooNetwork/</url>
+    </scm>
+
+    <!-- Build settings -->
     <build>
+        <defaultGoal>clean compile package</defaultGoal>
+        <sourceDirectory>${basedir}/src/java</sourceDirectory>
         <resources>
             <resource>
-                <filtering>true</filtering>
-                <directory>${basedir}/src/resources/</directory>
-                <includes>
-                    <include>plugin.yml</include>
-                </includes>
+                <directory>${basedir}/src/resources</directory>
             </resource>
         </resources>
-        <defaultGoal>clean compile package</defaultGoal>
-        <sourceDirectory>${basedir}/src/java/</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -29,6 +68,8 @@
             </plugin>
         </plugins>
     </build>
+
+    <!-- Dependencies -->
     <dependencies>
         <dependency>
             <groupId>org.bukkit</groupId>
@@ -42,6 +83,8 @@
             <optional>true</optional>
         </dependency>
     </dependencies>
+
+    <!-- Repositories -->
     <repositories>
         <repository>
             <id>bukkit</id>
