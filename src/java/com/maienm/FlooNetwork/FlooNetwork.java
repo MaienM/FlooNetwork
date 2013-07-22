@@ -165,6 +165,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     // Save the fireplace.
                     fp.owner = player;
                     fp.name = fpEntry.getKey();
+                    fp.item = fpConfig.getInt("item");
                     fireplaces.get(player).put(fpEntry.getKey(), fp);
                 }
             }
@@ -193,8 +194,10 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 cfgFireplace = cfgPlayer.createSection(fpEntry.getKey());
 
                 // Set the data.
-                location = fpEntry.getValue().getSignLocation();
+                Fireplace fp = fpEntry.getValue();
+                location = fp.getSignLocation();
                 cfgFireplace.set("world", location.getWorld().getName());
+                cfgFireplace.set("item", fp.item);
                 cfgFireplace.set("coordinates", Arrays.asList(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
             }
         }
@@ -501,6 +504,23 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
             return;
         }
 
+        // Check whether the third line is valid.
+        String itemIDText = event.getLine(2);
+        int itemID = 1;
+        if (!itemIDText.equals(""))
+        {
+            try 
+            {
+                itemID = Integer.parseInt(itemIDText);
+            }
+            catch (NumberFormatException e)
+            {
+                sendError(player, "That does not seem to be a valid item id.");
+                rejectSign(event);
+                return;
+            }
+        }
+
         // Check whether we can find a valid fireplace here.
         Fireplace fireplace = Fireplace.detect(event.getBlock().getLocation());
         if (fireplace == null) 
@@ -513,6 +533,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         // Set all values of the fireplace.
         fireplace.owner = player;
         fireplace.name = name;
+        fireplace.item = itemID;
 
         // Store the fireplace.
         if (!fireplaces.containsKey(player))
