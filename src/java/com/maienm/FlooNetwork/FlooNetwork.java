@@ -343,6 +343,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 }
 
                 reloadConfigCustom();
+                sender.sendMessage(ChatColor.BLUE + "Reloaded config.");
             }
 
             else if (command == "warpto" || command == "tp")
