@@ -3,7 +3,8 @@ main: com.maienm.FlooNetwork.FlooNetwork
 version: 0.0.1
 author: MaienM
 dev-url: 
-softdepend: [LWC]
+depend: [MenuService]
+softdepend: [LWC, MenuService]
 description: >
              Move around the way REAL wizzards do!
 commands:
@@ -23,7 +24,7 @@ permissions:
     description: Sensible defaults for users.
     children:
       floonetwork.use.*: true
-      floonetwork.travel: true
+      floonetwork.travel.*: true
       floonetwork.create: true
       floonetwork.destroy: true
       floonetwork.command.list: true
@@ -70,7 +71,7 @@ permissions:
       floonetwork.command.warp.*: true
       floonetwork.command.reload: true
   floonetwork.command:
-    description: Can use the /fn command. This command makes no sense without any of the floonetwork.command.* permissions.
+    description: Can use the /fn command. This permission is included in all the floonetwork.command.* permissions, so there is no need to explicitly set this.
   floonetwork.command.list:
     description: Can get a list of all Floo Network fireplaces they have access to.
     children:

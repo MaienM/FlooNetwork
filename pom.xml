@@ -77,6 +77,11 @@
             <version>1.4.7-R1.1-SNAPSHOT</version>
         </dependency>
         <dependency>
+            <groupId>com.m0pt0pmatt.menuservice</groupId>
+            <artifactId>MenuService</artifactId>
+            <version>test</version>
+        </dependency>
+        <dependency>
             <groupId>com.griefcraft</groupId>
             <artifactId>LWC</artifactId>
             <version>4.3.1</version>
