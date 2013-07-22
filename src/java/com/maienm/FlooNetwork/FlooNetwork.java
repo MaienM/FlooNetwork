@@ -264,128 +264,130 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         }
         else 
         {
-            String command = args.remove(0);
+            String command = args.remove(0).toLowerCase();
             OfflinePlayer subject;
-            switch (command.toLowerCase())
+
+            if (command == "list")
             {
-                case "list":
-                    // Get the subject.
-                    subject = getSubject(sender, args);
-                    if (subject == null)
-                    {
-                        return false;
-                    }
+                // Get the subject.
+                subject = getSubject(sender, args);
+                if (subject == null)
+                {
+                    return false;
+                }
 
-                    // Check permission.
-                    if (!requirePermission(sender, "floonetwork.command.list"))
-                    {
-                        return false;
-                    }
+                // Check permission.
+                if (!requirePermission(sender, "floonetwork.command.list"))
+                {
+                    return false;
+                }
 
-                    // If more arguments => error.
-                    if (args.size() > 0)
-                    {
-                        return sendError(sender, "Invalid number of arguments.");
-                    }
+                // If more arguments => error.
+                if (args.size() > 0)
+                {
+                    return sendError(sender, "Invalid number of arguments.");
+                }
 
-                    // Check if user has any fireplaces.
-                    if (!fireplaces.containsKey(subject))
-                    {
-                        return sendError(sender, "No fireplaces found.");
-                    }
+                // Check if user has any fireplaces.
+                if (!fireplaces.containsKey(subject))
+                {
+                    return sendError(sender, "No fireplaces found.");
+                }
 
-                    // List all fireplaces.
-                    sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + subject.getName());
-                    for (Map.Entry<String, Fireplace> entry : fireplaces.get(subject).entrySet())
+                // List all fireplaces.
+                sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + subject.getName());
+                for (Map.Entry<String, Fireplace> entry : fireplaces.get(subject).entrySet())
+                {
+                    Fireplace fp = entry.getValue();
+                    if (fp.hasAccess((Player)sender))
                     {
-                        Fireplace fp = entry.getValue();
+                        sender.sendMessage(entry.getKey());
+                    }
+                }
+            }
+
+            else if (command == "listall")
+            {
+                // Check permission.
+                if (!requirePermission(sender, "floonetwork.command.list"))
+                {
+                    return false;
+                }
+
+                // If more arguments => error.
+                if (args.size() > 0)
+                {
+                    return sendError(sender, "Invalid number of arguments.");
+                }
+
+                // List all fireplaces.
+                for (Map.Entry<OfflinePlayer, HashMap<String, Fireplace>> playerEntry : fireplaces.entrySet())
+                {
+                    sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + playerEntry.getKey().getName());
+                    for (Map.Entry<String, Fireplace> fpEntry : playerEntry.getValue().entrySet())
+                    {
+                        Fireplace fp = fpEntry.getValue();
                         if (fp.hasAccess((Player)sender))
                         {
-                            sender.sendMessage(entry.getKey());
+                            sender.sendMessage(fpEntry.getKey());
                         }
                     }
-                    break;
+                }
+            }
 
-                case "listall":
-                    // Check permission.
-                    if (!requirePermission(sender, "floonetwork.command.list"))
-                    {
-                        return false;
-                    }
+            else if (command == "reload")
+            {
+                if (!requirePermission(sender, "floonetwork.command.reload"))
+                {
+                    return false;
+                }
 
-                    // If more arguments => error.
-                    if (args.size() > 0)
-                    {
-                        return sendError(sender, "Invalid number of arguments.");
-                    }
+                reloadConfigCustom();
+            }
 
-                    // List all fireplaces.
-                    for (Map.Entry<OfflinePlayer, HashMap<String, Fireplace>> playerEntry : fireplaces.entrySet())
-                    {
-                        sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + playerEntry.getKey().getName());
-                        for (Map.Entry<String, Fireplace> fpEntry : playerEntry.getValue().entrySet())
-                        {
-                            Fireplace fp = fpEntry.getValue();
-                            if (fp.hasAccess((Player)sender))
-                            {
-                                sender.sendMessage(fpEntry.getKey());
-                            }
-                        }
-                    }
-                    break;
+            else if (command == "warpto" || command == "tp")
+            {
+                // Get the fireplace.
+                if (args.size() < 2)
+                {
+                    return sendError(sender, "Invalid number of arguments.");
+                }
+                Fireplace fp = getFireplace(getServer().getOfflinePlayer(args.remove(0)), args.remove(0));
+                if (fp == null)
+                {
+                    return sendError(sender, "Unable to find fireplace.");
+                }
 
-                case "reload":
-                    if (!requirePermission(sender, "floonetwork.command.reload"))
-                    {
-                        return false;
-                    }
+                // Get the subject.
+                subject = getSubject(sender, args);
+                if (subject == null)
+                {
+                    return false;
+                }
 
-                    reloadConfigCustom();
-                    break;
+                // Check permission.
+                if (!requirePermission(sender, "floonetwork.command.warp" + (subject.equals(sender) ? "" : ".other") + (fp.isOwner((Player)sender) ? "" : ".anywhere")))
+                {
+                    return false;
+                }
+                if (!fp.hasAccess((Player)sender))
+                {
+                    return sendError(sender, "You do not have access to that fireplace.");
+                }
 
-                case "warpto":
-                case "tp":
-                    // Get the fireplace.
-                    if (args.size() < 2)
-                    {
-                        return sendError(sender, "Invalid number of arguments.");
-                    }
-                    Fireplace fp = getFireplace(getServer().getOfflinePlayer(args.remove(0)), args.remove(0));
-                    if (fp == null)
-                    {
-                        return sendError(sender, "Unable to find fireplace.");
-                    }
+                // If more arguments => error.
+                if (args.size() > 0)
+                {
+                    return sendError(sender, "Invalid number of arguments.");
+                }
 
-                    // Get the subject.
-                    subject = getSubject(sender, args);
-                    if (subject == null)
-                    {
-                        return false;
-                    }
-
-                    // Check permission.
-                    if (!requirePermission(sender, "floonetwork.command.warp" + (subject.equals(sender) ? "" : ".other") + (fp.isOwner((Player)sender) ? "" : ".anywhere")))
-                    {
-                        return false;
-                    }
-                    if (!fp.hasAccess((Player)sender))
-                    {
-                        return sendError(sender, "You do not have access to that fireplace.");
-                    }
-
-                    // If more arguments => error.
-                    if (args.size() > 0)
-                    {
-                        return sendError(sender, "Invalid number of arguments.");
-                    }
-
-                    // Warp to the fireplace.
-                    Player player = subject.getPlayer();
-                    if (player == null)
-                    {
-                        return sendError(sender, "Unable to find target player.");
-                    }
-                    fp.warpTo(player);
+                // Warp to the fireplace.
+                Player player = subject.getPlayer();
+                if (player == null)
+                {
+                    return sendError(sender, "Unable to find target player.");
+                }
+                fp.warpTo(player);
             }
         }
         return false;
@@ -640,7 +642,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     public void onPlayerUse(PlayerInteractEvent event)
     {
         // Check whether the player is using the correct material.
-        if (event.getMaterial() != TRAVALCATALYST)
+        if (event.getMaterial().getId() != TRAVALCATALYST)
         {
             return;
         }
@@ -687,7 +689,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      * This will be triggered once a user has chosen the fireplace to travel to.
      */
     @Override
-	public void handleAction(ActionEvent event)
+    public void handleAction(ActionEvent event)
     {
         // Get the player.
         Player player = Bukkit.getPlayer(event.getAction().getPlayerName());
@@ -699,7 +701,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
         // Get the travel catalyst.
         ItemStack item = player.getInventory().getItemInHand();
-        if (item.getType() != TRAVALCATALYST)
+        if (item.getType().getId() != TRAVALCATALYST)
         {
             sendError(player, "You do not seem to be holding Floo Powder.");
             return;
