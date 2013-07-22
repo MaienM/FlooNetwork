@@ -1,9 +1,12 @@
 package com.maienm.FlooNetwork;
 
+import com.griefcraft.lwc.LWC;
+import com.griefcraft.lwc.LWCPlugin;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -14,6 +17,7 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.bukkit.material.Sign;
+import org.bukkit.plugin.Plugin;
 
 public class Fireplace
 {
@@ -68,6 +72,31 @@ public class Fireplace
 	 * The name of the fireplace.
 	 */
 	public String name = null;
+	
+	/**
+	 * The item of the fireplace.
+	 */
+	public int item = 1;
+
+    /**
+     *  LWC plugin (protection)
+     */
+    private static LWC lwc;
+
+	/**
+	 * Initialize this class.
+	 *
+	 * Called in the onEnable method of the plugin.
+	 */
+	public static void init()
+	{
+        // Get LWC, if it exists.
+        Plugin plugLWC = Bukkit.getPluginManager().getPlugin("LWC");
+        if (plugLWC != null)
+        {
+            lwc = ((LWCPlugin)plugLWC).getLWC();
+        }
+	}
 
 	/**
 	 * Check if a block is a valid fireplace block.
@@ -207,6 +236,33 @@ public class Fireplace
 	{
 		return owner.equals(player);
 	}
+
+    /**
+     * Convenience method to check whether a player has access to a fireplace.
+     */
+    public boolean hasAccess(Player player)
+    {
+        // Check whether the user has the required permission.
+        if (!player.hasPermission("floonetwork.travel" + (isOwner(player) ? "" : "other")))
+        {
+            return false;
+        }
+
+        // The owner of a fireplace always has access.
+        if (isOwner(player))
+        {
+            return true;
+        }
+
+        // If LWC is present, use LWC.
+        if (lwc != null)
+        {
+            return lwc.canAccessProtection(player, getSignLocation().getBlock());
+        }
+
+        // No protection plugin was found, so the user is granted access on the merit of having the required permission.
+        return true;
+    }
 
 	/**
 	 * Check whether a fireplace is lighted.

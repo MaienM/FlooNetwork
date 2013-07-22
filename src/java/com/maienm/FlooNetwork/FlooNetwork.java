@@ -1,8 +1,12 @@
 package com.maienm.FlooNetwork;
 
-import com.griefcraft.lwc.LWC;
-import com.griefcraft.lwc.LWCPlugin;
+import com.m0pt0pmatt.menuservice.api.MenuInstance;
+import com.m0pt0pmatt.menuservice.api.MenuService;
+import com.m0pt0pmatt.menuservice.api.Renderer;
+import com.m0pt0pmatt.menuservice.api.ActionEvent;
+import com.m0pt0pmatt.menuservice.api.ActionListener;
 import com.maienm.FlooNetwork.Fireplace;
+import com.maienm.FlooNetwork.PlayerMenu;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,7 +48,7 @@ import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class FlooNetwork extends JavaPlugin implements Listener 
+public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 {
     protected static FlooNetwork plugin;
     protected FileConfiguration config;
@@ -85,9 +89,14 @@ public class FlooNetwork extends JavaPlugin implements Listener
     private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
 
     /**
-     *  LWC plugin (protection)
+     * Menu Service (for... well, menu's).
      */
-    private LWC lwc;
+    private MenuService menuService;
+
+    /**
+     * The renderer.
+     */
+    private Renderer renderer;
  
     /**
      * On plugin load.
@@ -98,12 +107,15 @@ public class FlooNetwork extends JavaPlugin implements Listener
         // Load the config.
         reloadConfigCustom();
 
-        // Get LWC, if it exists.
-        Plugin plugLWC = Bukkit.getPluginManager().getPlugin("LWC");
-        if (plugLWC != null)
-        {
-            lwc = ((LWCPlugin)plugLWC).getLWC();
-        }
+        // Get the MenuService.
+        menuService = Bukkit.getServicesManager().getRegistration(MenuService.class).getProvider();
+
+        // Register the renderers.
+		renderer = menuService.getRenderer("inventory");
+		menuService.addRenderer(renderer);
+
+        // Call init on the other classess that need it.
+        Fireplace.init();
 
         // Register all event handlers.
         getServer().getPluginManager().registerEvents(this, this);
@@ -208,6 +220,25 @@ public class FlooNetwork extends JavaPlugin implements Listener
     }
 
     /**
+     * Plugin name.
+     */
+    @Override
+	public String getPlugin() 
+    {
+		return "FlooNetwork";
+	}
+
+    /**
+     * Dummy methods.
+     */
+    @Override
+	public void playerAdded(MenuInstance instance, String playerName) {}
+    @Override
+	public void playerRemoved(MenuInstance instance, String playerName) {}
+    @Override
+	public void playerCountZero(MenuInstance instance, String playerName) {}
+
+    /**
      * Command event.
      *
      * Handles the /fn command.
@@ -274,7 +305,8 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + subject.getName());
                     for (Map.Entry<String, Fireplace> entry : fireplaces.get(subject).entrySet())
                     {
-                        if (hasAccess((Player)sender, entry.getValue()))
+                        Fireplace fp = entry.getValue();
+                        if (fp.hasAccess((Player)sender))
                         {
                             sender.sendMessage(entry.getKey());
                         }
@@ -300,7 +332,8 @@ public class FlooNetwork extends JavaPlugin implements Listener
                         sender.sendMessage(ChatColor.BLUE + "Fireplaces of " + playerEntry.getKey().getName());
                         for (Map.Entry<String, Fireplace> fpEntry : playerEntry.getValue().entrySet())
                         {
-                            if (hasAccess((Player)sender, fpEntry.getValue()))
+                            Fireplace fp = fpEntry.getValue();
+                            if (fp.hasAccess((Player)sender))
                             {
                                 sender.sendMessage(fpEntry.getKey());
                             }
@@ -342,7 +375,7 @@ public class FlooNetwork extends JavaPlugin implements Listener
                     {
                         return false;
                     }
-                    if (!hasAccess((Player)sender, fp))
+                    if (!fp.hasAccess((Player)sender))
                     {
                         return sendError(sender, "You do not have access to that fireplace.");
                     }
@@ -632,10 +665,16 @@ public class FlooNetwork extends JavaPlugin implements Listener
         }
 
         // Show  menu.
-        // @TODO
+        OfflinePlayer oplayer = player;
+        PlayerMenu playerMenu = new PlayerMenu(player);
+        playerMenu.addRenderer(renderer);
+        menuService.addMenu(playerMenu);
+        MenuInstance instance = menuService.createMenuInstance(playerMenu, oplayer.getName());
+        instance.addActionListener(this);
+        menuService.openMenuInstance(instance, oplayer.getName());
 
         // Check permission.
-        if (!hasAccess(player, fp))
+        if (!fp.hasAccess(player))
         {
             sendError(player, "You do not have access to that fireplace.");
             return;
@@ -647,30 +686,14 @@ public class FlooNetwork extends JavaPlugin implements Listener
     }
 
     /**
-     * Convenience method to check whether a player has access to a fireplace.
+     * Handle a menu action.
+     *
+     * This will be triggered once a user has chosen the fireplace to travel to.
      */
-    private boolean hasAccess(Player player, Fireplace fireplace)
+    @Override
+	public void handleAction(ActionEvent event)
     {
-        // Check whether the user has the required permission.
-        if (!player.hasPermission("floonetwork.travel" + (fireplace.isOwner(player) ? "" : "other")))
-        {
-            return false;
-        }
-
-        // The owner of a fireplace always has access.
-        if (fireplace.isOwner(player))
-        {
-            return true;
-        }
-
-        // If LWC is present, use LWC.
-        if (lwc != null)
-        {
-            return lwc.canAccessProtection(player, fireplace.getSignLocation().getBlock());
-        }
-
-        // No protection plugin was found, so the user is granted access on the merit of having the required permission.
-        return true;
+        System.out.println("Action!");
     }
 
     /**
@@ -694,6 +717,22 @@ public class FlooNetwork extends JavaPlugin implements Listener
 
         sendError(sender, "You do not have the required permission to do this: " + ChatColor.BLUE + permission);
         return false;
+    }
+
+    /**
+     * Convenience method to list all fireplaces.
+     */
+    public List<Fireplace> getAllFireplaces()
+    {
+        ArrayList<Fireplace> fpList = new ArrayList<Fireplace>();
+        for (HashMap<String, Fireplace> userFireplaces : fireplaces.values())
+        {
+            for (Fireplace fireplace : userFireplaces.values())
+            {
+                fpList.add(fireplace);
+            }
+        }
+        return fpList;
     }
 
     /**
