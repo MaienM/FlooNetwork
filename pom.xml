@@ -4,7 +4,7 @@
     <!-- Project data -->
     <groupId>me.maienm.FlooNetwork</groupId>
     <artifactId>FlooNetwork</artifactId>
-    <version>0.0.1</version>
+    <version>1.0.0</version>
 
     <name>Floo Network</name>
     <description>Brings J.K. Rowling's Floo Network to Mojang's Minecraft.</description>
@@ -74,7 +74,7 @@
         <dependency>
             <groupId>org.bukkit</groupId>
             <artifactId>bukkit</artifactId>
-            <version>1.4.7-R1.1-SNAPSHOT</version>
+            <version>1.5.2-R1.1-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.m0pt0pmatt.menuservice</groupId>
