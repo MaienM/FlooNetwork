@@ -1,11 +1,18 @@
 package com.maienm.FlooNetwork;
 
+import com.m0pt0pmatt.menuservice.api.ContainerAttribute;
 import com.m0pt0pmatt.menuservice.api.MenuComponent;
+import com.m0pt0pmatt.menuservice.api.MenuInstance;
+import com.m0pt0pmatt.menuservice.api.MenuService;
+import com.m0pt0pmatt.menuservice.api.Renderer;
 import com.maienm.FlooNetwork.Fireplace;
 import com.maienm.FlooNetwork.FlooNetwork;
 import java.util.Arrays;
+import java.util.HashMap;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 class PlayerMenu extends MenuComponent
 {
@@ -13,18 +20,54 @@ class PlayerMenu extends MenuComponent
 	 * Whether the menu is valid.
 	 */
 	public boolean isValid = false;
-	public int counter = 0;
+
+	/**
+	 * The player for which this menu has been created.
+	 */
+	private Player player;
+
+	/**
+	 * Menu Service (for... well, menu's).
+	 */
+	private static MenuService menuService;
+
+	/**
+	 * The renderer.
+	 */
+	private static Renderer renderer;
+
+	/**
+	 * Floo Network plugin.
+	 */
+	private static FlooNetwork floonetwork;
+
+	/**
+	 * Initialize this class.
+	 *
+	 * Called in the onEnable method of the plugin.
+	 */
+	public static void init()
+	{
+		// Get the FlooNetwork plugin instance.
+		floonetwork = (FlooNetwork) Bukkit.getPluginManager().getPlugin("FlooNetwork");
+
+		// Get the MenuService.
+		menuService = Bukkit.getServicesManager().getRegistration(MenuService.class).getProvider();
+
+		// Find the renderer.
+		renderer = menuService.getRenderer("inventory");
+	}
 
 	public PlayerMenu(Player player)
 	{
 		super();
+		this.player = player;
 
 		// Set title.
-		addAttribute("title", player.getName());
+		addAttribute("title", "Pick a fireplace to travel to:");
 
 		// Add items.
-		FlooNetwork fn = (FlooNetwork) Bukkit.getPluginManager().getPlugin("FlooNetwork");
-		for (Fireplace fp : fn.getAllFireplaces())
+		for (Fireplace fp : floonetwork.getAllFireplaces())
 		{
 			if (fp.hasAccess(player))
 			{
@@ -32,8 +75,11 @@ class PlayerMenu extends MenuComponent
 				addFireplace(fp);
 			}
 		}
+
+		// Add the renderer.
+		addRenderer(renderer);
 	}
-	
+
 	/**
 	 * Add a fireplace to the menu.
 	 */
@@ -43,17 +89,38 @@ class PlayerMenu extends MenuComponent
 		MenuComponent component = new MenuComponent();
 
 		// Set attributes.
-		System.out.println(fp.name);
 		component.addAttribute("type", "button");
 		component.addAttribute("tag", fp.owner.getName() + "-" + fp.name);
-		component.addAttribute("text", fp.name);
-		component.addAttribute("lore", Arrays.asList(fp.owner.getName()));
+		component.addAttribute("text", ChatColor.RESET + fp.name);
+		component.addAttribute("lore", Arrays.asList(ChatColor.GOLD + fp.owner.getName()));
 		component.addAttribute("image", fp.item);
 
 		// Add click handler.
-		//component.addAttribute("actions");
+		HashMap actionMap = new HashMap<String, ContainerAttribute>();
+		HashMap leftClickMap = new HashMap<String, Object>();
+		leftClickMap.put("tags", Arrays.asList(fp.id));
+		actionMap.put("leftClick", new ContainerAttribute("leftClick", leftClickMap));
+		component.addAttribute("actions", new ContainerAttribute("actions", actionMap));
 
 		// Add to menu.
 		addComponent(component);
+	}
+
+	/**
+	 * Show this menu.
+	 */
+	public void show()
+	{
+		// Register and the menu.
+		menuService.addMenu(this);
+
+		// Create an instance of the menu.
+		MenuInstance instance = menuService.createMenuInstance(this, player.getName());
+
+		// Add the action listener.
+		instance.addActionListener(floonetwork);
+
+		// Show the menu.
+		menuService.openMenuInstance(instance, player.getName());
 	}
 }

@@ -87,16 +87,6 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      * Map of all fireplaces.
      */
     private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
-
-    /**
-     * Menu Service (for... well, menu's).
-     */
-    private MenuService menuService;
-
-    /**
-     * The renderer.
-     */
-    private Renderer renderer;
  
     /**
      * On plugin load.
@@ -107,15 +97,9 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         // Load the config.
         reloadConfigCustom();
 
-        // Get the MenuService.
-        menuService = Bukkit.getServicesManager().getRegistration(MenuService.class).getProvider();
-
-        // Register the renderers.
-		renderer = menuService.getRenderer("inventory");
-		menuService.addRenderer(renderer);
-
         // Call init on the other classess that need it.
         Fireplace.init();
+        PlayerMenu.init();
 
         // Register all event handlers.
         getServer().getPluginManager().registerEvents(this, this);
@@ -667,22 +651,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         // Show  menu.
         OfflinePlayer oplayer = player;
         PlayerMenu playerMenu = new PlayerMenu(player);
-        playerMenu.addRenderer(renderer);
-        menuService.addMenu(playerMenu);
-        MenuInstance instance = menuService.createMenuInstance(playerMenu, oplayer.getName());
-        instance.addActionListener(this);
-        menuService.openMenuInstance(instance, oplayer.getName());
-
-        // Check permission.
-        if (!fp.hasAccess(player))
-        {
-            sendError(player, "You do not have access to that fireplace.");
-            return;
-        }
-
-        // Consume item.
-        ItemStack item = event.getItem();
-        item.setAmount(item.getAmount() - 1);
+        playerMenu.show();
     }
 
     /**
@@ -693,7 +662,57 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     @Override
 	public void handleAction(ActionEvent event)
     {
-        System.out.println("Action!");
+        // Get the player.
+        Player player = Bukkit.getPlayer(event.getAction().getPlayerName());
+        player.getOpenInventory().close();
+        if (player == null)
+        {
+            return;
+        }
+
+        // Get the travel catalyst.
+        ItemStack item = player.getInventory().getItemInHand();
+        if (item.getType() != TRAVALCATALYST)
+        {
+            sendError(player, "You do not seem to be holding Floo Powder.");
+            return;
+        }
+
+        // Get the fireplace.
+        Fireplace fp = getFireplace(event.getAction().getTag());
+        if (fp == null)
+        {
+            sendError(player, "That fireplace no longer exists.");
+            return;
+        }
+
+        // Check permission.
+        if (!fp.hasAccess(player))
+        {
+            sendError(player, "You do not have access to that fireplace.");
+            return;
+        }
+
+        // Check whether the user still is in a fireplace.
+        Fireplace currentFP = getFireplace(player.getLocation(), true, false, false, true);
+        if (currentFP == null)
+        {
+            sendError(player, "You have to be in a fireplace to travel to a fireplace.");
+            return;
+        }
+        if (currentFP.equals(fp))
+        {
+            sendError(player, "You're already there!");
+            return;
+        }
+
+        // Consume item.
+        item.setAmount(item.getAmount() - 1);
+
+        // Teleport player.
+        currentFP.playEffect();
+        fp.playEffect();
+        fp.warpTo(player);
     }
 
     /**
@@ -782,6 +801,17 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         if (fireplaces.containsKey(player) && fireplaces.get(player).containsKey(name))
         {
             return fireplaces.get(player).get(name);
+        }
+        return null;
+    }
+    private Fireplace getFireplace(int id)
+    {
+        for (Fireplace fireplace : getAllFireplaces())
+        {
+            if (fireplace.id == id)
+            {
+                return fireplace;
+            }
         }
         return null;
     }

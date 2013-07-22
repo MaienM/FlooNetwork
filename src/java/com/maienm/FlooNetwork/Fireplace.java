@@ -64,6 +64,16 @@ public class Fireplace
 	private int zDirection = 0;
 
 	/**
+	 * The next available ID.
+	 */
+	private static int nextID = 0;
+
+	/**
+	 * The ID of the fireplace.
+	 */
+	public int id;
+
+	/**
 	 * The owner of the fireplace.
 	 */
 	public OfflinePlayer owner = null;
@@ -123,6 +133,7 @@ public class Fireplace
 		fp.location = location;
 		fp.xDirection = x;
 		fp.zDirection = z;
+		fp.id = nextID++;
 		return fp;
 	}
 
