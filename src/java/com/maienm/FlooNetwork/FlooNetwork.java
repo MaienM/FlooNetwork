@@ -57,17 +57,17 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     /**
      * The material used to travel.
      */
-    final protected Material TRAVALCATALYST = Material.REDSTONE;
+    private int TRAVALCATALYST = -1;
 
     /**
      * The metadata key for fire invulnerability.
      */
-    final protected String FIREINV_METADATA_KEY = "floonetworkFireInvulnerability";
+    final private String FIREINV_METADATA_KEY = "floonetworkFireInvulnerability";
 
     /**
      * The duration for fire invulnerability.
      */
-    final protected int FIREINV_DURATION = 1;
+    final private int FIREINV_DURATION = 1;
 
     /**
      * The list of all DamageCause types we want to ignore when in a fireplace.
@@ -120,9 +120,15 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      */
     private void reloadConfigCustom()
     {
+        // Copy over the default config if needed.
+        saveDefaultConfig();
+
         // Reload the config.
         reloadConfig();
         config = getConfig();
+
+        // Load the material from the config.
+        TRAVALCATALYST = config.getInt("flooPowderID");
 
         // Load the list of fireplaces from the config.
         ConfigurationSection cfgFireplaces = config.getConfigurationSection("fireplaces");
