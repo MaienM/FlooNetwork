@@ -743,6 +743,9 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         currentFP.playEffect();
         fp.playEffect();
         fp.warpTo(player);
+        
+	// Extinguish player.
+	player.setFireTicks(0);
     }
 
     /**
