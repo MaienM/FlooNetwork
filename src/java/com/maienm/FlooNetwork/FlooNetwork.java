@@ -120,6 +120,8 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      */
     private void reloadConfigCustom()
     {
+        System.out.println("Loading config.");
+
         // Copy over the default config if needed.
         saveDefaultConfig();
 
@@ -129,6 +131,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
         // Load the material from the config.
         TRAVALCATALYST = config.getInt("flooPowderID");
+        System.out.println(String.format("Set floo powder ID to %d.", TRAVALCATALYST));
 
         // Load the list of fireplaces from the config.
         ConfigurationSection cfgFireplaces = config.getConfigurationSection("fireplaces");
@@ -164,7 +167,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     fp = Fireplace.detect(location);
                     if (fp == null)
                     {
-                        System.out.println(String.format("Fireplace %s of player %s read from config file is invalid; it has been ignored.", playerEntry.getKey(), fpEntry.getKey()));
+                        System.out.println(String.format("Fireplace %s of player %s is invalid; it has been ignored.", playerEntry.getKey(), fpEntry.getKey()));
                         continue;
                     }
 
@@ -176,6 +179,8 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 }
             }
         }
+
+        System.out.println("Done config.");
     }
 
     /**
@@ -201,7 +206,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
                 // Set the data.
                 Fireplace fp = fpEntry.getValue();
-                location = fp.getSignLocation();
+               location = fp.getSignLocation();
                 cfgFireplace.set("world", location.getWorld().getName());
                 cfgFireplace.set("item", fp.item);
                 cfgFireplace.set("coordinates", Arrays.asList(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
@@ -216,20 +221,20 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      * Plugin name.
      */
     @Override
-	public String getPlugin() 
+    public String getPlugin() 
     {
-		return "FlooNetwork";
-	}
+    return "FlooNetwork";
+    }
 
     /**
      * Dummy methods.
      */
     @Override
-	public void playerAdded(MenuInstance instance, String playerName) {}
+    public void playerAdded(MenuInstance instance, String playerName) {}
     @Override
-	public void playerRemoved(MenuInstance instance, String playerName) {}
+    public void playerRemoved(MenuInstance instance, String playerName) {}
     @Override
-	public void playerCountZero(MenuInstance instance, String playerName) {}
+    public void playerCountZero(MenuInstance instance, String playerName) {}
 
     /**
      * Command event.
@@ -744,8 +749,8 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         fp.playEffect();
         fp.warpTo(player);
         
-	// Extinguish player.
-	player.setFireTicks(0);
+        // Extinguish player.
+        player.setFireTicks(0);
     }
 
     /**
