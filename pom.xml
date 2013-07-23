@@ -79,7 +79,7 @@
         <dependency>
             <groupId>com.m0pt0pmatt.menuservice</groupId>
             <artifactId>MenuService</artifactId>
-            <version>test</version>
+            <version>0.5.0</version>
         </dependency>
         <dependency>
             <groupId>com.griefcraft</groupId>
