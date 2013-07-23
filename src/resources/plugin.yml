@@ -1,6 +1,6 @@
 name: FlooNetwork
 main: com.maienm.FlooNetwork.FlooNetwork
-version: 0.0.1
+version: 1.0.0
 author: MaienM
 dev-url: 
 depend: [MenuService]
