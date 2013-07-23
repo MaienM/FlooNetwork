@@ -272,7 +272,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
             String command = args.remove(0).toLowerCase();
             OfflinePlayer subject;
 
-            if (command == "list")
+            if (command.equals("list"))
             {
                 // Get the subject.
                 subject = getSubject(sender, args);
@@ -311,7 +311,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 }
             }
 
-            else if (command == "listall")
+            else if (command.equals("listall"))
             {
                 // Check permission.
                 if (!requirePermission(sender, "floonetwork.command.list"))
@@ -340,7 +340,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 }
             }
 
-            else if (command == "reload")
+            else if (command.equals("reload"))
             {
                 if (!requirePermission(sender, "floonetwork.command.reload"))
                 {
@@ -351,7 +351,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 sender.sendMessage(ChatColor.BLUE + "Reloaded config.");
             }
 
-            else if (command == "warpto" || command == "tp")
+            else if (command.equals("warpto") || command.equals("tp"))
             {
                 // Get the fireplace.
                 if (args.size() < 2)
@@ -394,6 +394,11 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     return sendError(sender, "Unable to find target player.");
                 }
                 fp.warpTo(player);
+            }
+
+            else 
+            {
+                return sendError(sender, "Unknown command.");
             }
         }
         return false;
