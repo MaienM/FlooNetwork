@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Project data -->
-    <groupId>me.maienm.FlooNetwork</groupId>
+    <groupId>com.maienm.FlooNetwork</groupId>
     <artifactId>FlooNetwork</artifactId>
     <version>1.0.0</version>
 
