@@ -747,7 +747,14 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         }
 
         // Consume item.
-        item.setAmount(item.getAmount() - 1);
+        if (item.getAmount() > 1)
+        {
+            item.setAmount(item.getAmount() - 1);
+        }
+        else
+        {
+            player.getInventory().setItemInHand(null);
+        }
 
         // Teleport player.
         currentFP.playEffect();
