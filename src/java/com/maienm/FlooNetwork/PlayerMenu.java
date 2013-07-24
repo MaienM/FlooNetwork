@@ -112,7 +112,7 @@ class PlayerMenu extends MenuComponent
 	public void show()
 	{
 		// Register and the menu.
-		menuService.addMenu(this);
+		menuService.addMenu(floonetwork, this);
 
 		// Create an instance of the menu.
 		MenuInstance instance = menuService.createMenuInstance(this, player.getName());
