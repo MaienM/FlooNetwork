@@ -79,7 +79,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     /**
      * The list of all Action types we want to accept to travel.
      */
-    private static final Set<Action> ACCEPTED_TRAVEL_ACTIONS = new HashSet<Action>(Arrays.asList(
+    private static final Set<Action> ACCEPTED_ACTIONS = new HashSet<Action>(Arrays.asList(
         new Action[] {Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK}
     ));
 
@@ -493,7 +493,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     public void onSignChange(SignChangeEvent event) 
     {
         // Check if the sign matches the criterea.
-        if (!event.getLine(0).equals("[fn]"))
+        if (!ChatColor.stripColor(event.getLine(0)).equals("[fn]"))
         {
             return;
         }
@@ -509,7 +509,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         }
 
         // Check whether the the second line is valid.
-        String name = event.getLine(1);
+        String name = ChatColor.stripColor(event.getLine(1));
         if (name.equals(""))
         {
             sendError(player, "You need to give the fireplace a name.");
@@ -524,7 +524,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         }
 
         // Check whether the third line is valid.
-        String itemIDText = event.getLine(2);
+        String itemIDText = ChatColor.stripColor(event.getLine(2));
         int itemID = 1;
         if (!itemIDText.equals(""))
         {
@@ -563,7 +563,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         saveConfigCustom();
 
         // Notify the player.
-        player.sendMessage(ChatColor.BLUE + "Fireplace created");
+        player.sendMessage(ChatColor.BLUE + "Created fireplace");
         System.out.println(fireplace.toString());
     }
 
@@ -648,22 +648,69 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      * Item use event.
      *
      * Handles a player using a fireplace.
+     * Handler a player right-clicking a sign to reactivate a fireplace.
      */
     @EventHandler(ignoreCancelled = true)
     public void onPlayerUse(PlayerInteractEvent event)
     {
-        // Check whether the player is using the correct material.
-        if (event.getMaterial().getId() != TRAVALCATALYST)
-        {
-            return;
-        }
-
         // Check whether the user is right-clicking.
-        if (!ACCEPTED_TRAVEL_ACTIONS.contains(event.getAction()))
+        if (!ACCEPTED_ACTIONS.contains(event.getAction()))
         {
             return;
         }
 
+        // If the player is right clicking on a sign, process that.
+        if (event.getClickedBlock().getType() == Material.WALL_SIGN)
+        {
+            onPlayerUseSign(event);
+        }
+
+        // If the player is right-clicking with floo powder, process that.
+        if (event.getMaterial().getId() == TRAVALCATALYST)
+        {
+            onPlayerUsePowder(event);
+        }
+    }
+
+    /**
+     * Called when the user clicks a sign.
+     */
+    public void onPlayerUseSign(PlayerInteractEvent event)
+    {
+        // Check if the sign is part of a valid fireplace. If so, ignore it,
+        Location loc = event.getClickedBlock().getLocation();
+        for (Fireplace fireplace : getAllFireplaces())
+        {
+            if (fireplace.getSignLocation().equals(loc))
+            {
+                return;
+            }
+        }
+
+        // Trigger the sign event.
+        Sign sign = (Sign)event.getClickedBlock().getState();
+        getServer().getPluginManager().callEvent(new SignChangeEvent(event.getClickedBlock(), event.getPlayer(), sign.getLines()));
+        
+        // Check if the sign has been reactivated. If so, fix it.
+        for (Fireplace fireplace : getAllFireplaces())
+        {
+            if (fireplace.getSignLocation().equals(loc))
+            {
+                sign.setLine(0, ChatColor.stripColor(sign.getLine(0)));
+                sign.setLine(1, ChatColor.stripColor(sign.getLine(1)));
+                sign.setLine(2, ChatColor.stripColor(sign.getLine(2)));
+                sign.setLine(3, "");
+                sign.update();
+                break;
+            }
+        }
+    }
+
+    /**
+     * Called when the user uses floo powder.
+     */
+    public void onPlayerUsePowder(PlayerInteractEvent event)
+    {
         // Check whether the player is in a fireplace.
         Player player = event.getPlayer();
         Fireplace fp = getFireplace(player.getLocation(), true, false, false, true);
