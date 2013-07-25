@@ -167,7 +167,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     fp = Fireplace.detect(location);
                     if (fp == null)
                     {
-                        System.out.println(String.format("Fireplace %s of player %s is invalid; it has been ignored.", playerEntry.getKey(), fpEntry.getKey()));
+                        System.out.println(String.format("Fireplace %s of player %s is invalid; it has been ignored.", fpEntry.getKey(), playerEntry.getKey()));
                         continue;
                     }
 
