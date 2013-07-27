@@ -1,6 +1,7 @@
 package com.maienm.FlooNetwork;
 
 import com.m0pt0pmatt.menuservice.api.ContainerAttribute;
+import com.m0pt0pmatt.menuservice.api.Menu;
 import com.m0pt0pmatt.menuservice.api.MenuComponent;
 import com.m0pt0pmatt.menuservice.api.MenuInstance;
 import com.m0pt0pmatt.menuservice.api.MenuService;
@@ -42,6 +43,9 @@ class PlayerMenu extends MenuComponent
 	private static FlooNetwork floonetwork;
 
 	/**
+	 * The next available ID for a tag.
+
+	/**
 	 * Initialize this class.
 	 *
 	 * Called in the onEnable method of the plugin.
@@ -65,6 +69,8 @@ class PlayerMenu extends MenuComponent
 
 		// Set title.
 		addAttribute("title", "Pick a fireplace to travel to:");
+		addAttribute("plugin", floonetwork.getName());
+		addAttribute("tag", player.getName() + "-menu");
 
 		// Add items.
 		for (Fireplace fp : floonetwork.getAllFireplaces())
@@ -90,10 +96,10 @@ class PlayerMenu extends MenuComponent
 
 		// Set attributes.
 		component.addAttribute("type", "button");
-		component.addAttribute("tag", fp.owner.getName() + "-" + fp.name);
+		component.addAttribute("tag", String.format("%s-%s", fp.owner.getName(), fp.name));
 		component.addAttribute("text", ChatColor.RESET + fp.name);
 		component.addAttribute("lore", Arrays.asList(ChatColor.GOLD + fp.owner.getName()));
-		component.addAttribute("image", fp.item);
+		component.addAttribute("material", fp.item);
 
 		// Add click handler.
 		HashMap actionMap = new HashMap<String, ContainerAttribute>();
@@ -111,11 +117,20 @@ class PlayerMenu extends MenuComponent
 	 */
 	public void show()
 	{
-		// Register and the menu.
+		String instanceName = player.getName() + "-instance";
+
+		// If an old version of the menu for this player still exists, remove it.
+		Menu oldMenu = menuService.getMenu(floonetwork, getAttribute("tag").toString());
+		if (oldMenu != null)
+		{
+			menuService.removeMenu(floonetwork, oldMenu);
+		}
+
+		// Register the menu.
 		menuService.addMenu(floonetwork, this);
 
 		// Create an instance of the menu.
-		MenuInstance instance = menuService.createMenuInstance(this, player.getName());
+		MenuInstance instance = menuService.createMenuInstance(this, instanceName);
 
 		// Add the action listener.
 		instance.addActionListener(floonetwork);

@@ -206,7 +206,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
                 // Set the data.
                 Fireplace fp = fpEntry.getValue();
-               location = fp.getSignLocation();
+                location = fp.getSignLocation();
                 cfgFireplace.set("world", location.getWorld().getName());
                 cfgFireplace.set("item", fp.item);
                 cfgFireplace.set("coordinates", Arrays.asList(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
