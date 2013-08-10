@@ -102,8 +102,8 @@ class PlayerMenu extends MenuComponent
         component.addAttribute("item", fp.item);
 
         // Add click handler.
-        HashMap actionMap = new HashMap<String, ContainerAttribute>();
-        HashMap leftClickMap = new HashMap<String, Object>();
+        HashMap<String, Object> actionMap = new HashMap<String, Object>();
+        HashMap<String, Object> leftClickMap = new HashMap<String, Object>();
         leftClickMap.put("tags", Arrays.asList(fp.id));
         actionMap.put("leftClick", new ContainerAttribute("leftClick", leftClickMap));
         component.addAttribute("actions", new ContainerAttribute("actions", actionMap));
