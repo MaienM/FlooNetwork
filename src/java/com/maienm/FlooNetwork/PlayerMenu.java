@@ -99,7 +99,7 @@ class PlayerMenu extends MenuComponent
         component.addAttribute("tag", String.format("%s-%s", fp.owner.getName(), fp.name));
         component.addAttribute("text", ChatColor.RESET + fp.name);
         component.addAttribute("lore", Arrays.asList(ChatColor.GOLD + fp.owner.getName()));
-        component.addAttribute("material", fp.item);
+        component.addAttribute("item", fp.item);
 
         // Add click handler.
         HashMap actionMap = new HashMap<String, ContainerAttribute>();

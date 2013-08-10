@@ -171,10 +171,15 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                         continue;
                     }
 
-                    // Save the fireplace.
+                    // Store the fireplace.
                     fp.owner = player;
                     fp.name = fpEntry.getKey();
-                    fp.item = fpConfig.getInt("item");
+                    Sign sign = (Sign)fp.getSignLocation().getBlock().getState();
+                    fp.item = parseItemID(sign.getLine(2));
+                    if (fp.item == null)
+                    {
+                        fp.item = new ItemStack(1);
+                    }
                     fireplaces.get(player).put(fpEntry.getKey(), fp);
                 }
             }
@@ -208,7 +213,6 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 Fireplace fp = fpEntry.getValue();
                 location = fp.getSignLocation();
                 cfgFireplace.set("world", location.getWorld().getName());
-                cfgFireplace.set("item", fp.item);
                 cfgFireplace.set("coordinates", Arrays.asList(location.getBlockX(), location.getBlockY(), location.getBlockZ()));
             }
         }
@@ -223,7 +227,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     @Override
     public String getPlugin() 
     {
-    return "FlooNetwork";
+        return "FlooNetwork";
     }
 
     /**
@@ -525,14 +529,11 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
         // Check whether the third line is valid.
         String itemIDText = ChatColor.stripColor(event.getLine(2));
-        int itemID = 1;
+        ItemStack itemID = new ItemStack(1);
         if (!itemIDText.equals(""))
         {
-            try 
-            {
-                itemID = Integer.parseInt(itemIDText);
-            }
-            catch (NumberFormatException e)
+            itemID = parseItemID(itemIDText);
+            if (itemID == null)
             {
                 sendError(player, "That does not seem to be a valid item id.");
                 rejectSign(event);
@@ -810,6 +811,30 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
         
         // Extinguish player.
         player.setFireTicks(0);
+    }
+
+    /**
+     * Convenience method to parse an item id.
+     */
+    private ItemStack parseItemID(String item)
+    {
+        String[] parts = item.split(":", 2);
+
+        try
+        {
+            if (parts.length > 1)
+            {
+                return new ItemStack(Integer.parseInt(parts[0]), 1,  (byte)Integer.parseInt(parts[1]));
+            }
+            else
+            {
+                return new ItemStack(Integer.parseInt(parts[0]));
+            }
+        }
+        catch  (NumberFormatException e)
+        {
+            return null;
+        }
     }
 
     /**

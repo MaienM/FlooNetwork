@@ -16,6 +16,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.Sign;
 import org.bukkit.plugin.Plugin;
 
@@ -86,7 +87,7 @@ public class Fireplace
     /**
      * The item of the fireplace.
      */
-    public int item = 1;
+    public ItemStack item = null;
 
     /**
      *  LWC plugin (protection)
@@ -304,14 +305,6 @@ public class Fireplace
         player.teleport(loc, TeleportCause.PLUGIN);
     }
 
-    private void playEffectTimes(World world, Location location, Effect effect, int data, int times)
-    {
-        for (int i=0; i<times; i++)
-        {
-            world.playEffect(location, effect, data);
-        }
-    }
-
     /**
      * Play the travel effect in this fireplace.
      */
@@ -329,6 +322,14 @@ public class Fireplace
         playEffectTimes(world, loc, Effect.MOBSPAWNER_FLAMES, 0, 5);
         loc.add(0, 1, 0);
         playEffectTimes(world, loc, Effect.MOBSPAWNER_FLAMES, 0, 5);
+    }
+
+    private void playEffectTimes(World world, Location location, Effect effect, int data, int times)
+    {
+        for (int i=0; i<times; i++)
+        {
+            world.playEffect(location, effect, data);
+        }
     }
 
     /**
