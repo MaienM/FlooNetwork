@@ -308,7 +308,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 for (Map.Entry<String, Fireplace> entry : fireplaces.get(subject).entrySet())
                 {
                     Fireplace fp = entry.getValue();
-                    if (fp.hasAccess((Player)sender))
+                    if (!(sender instanceof Player) || fp.hasAccess((Player)sender))
                     {
                         sender.sendMessage(entry.getKey());
                     }
@@ -336,7 +336,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     for (Map.Entry<String, Fireplace> fpEntry : playerEntry.getValue().entrySet())
                     {
                         Fireplace fp = fpEntry.getValue();
-                        if (fp.hasAccess((Player)sender))
+                        if (!(sender instanceof Player) || fp.hasAccess((Player)sender))
                         {
                             sender.sendMessage(fpEntry.getKey());
                         }
@@ -376,11 +376,11 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                 }
 
                 // Check permission.
-                if (!requirePermission(sender, "floonetwork.command.warp" + (subject.equals(sender) ? "" : ".other") + (fp.isOwner((Player)sender) ? "" : ".anywhere")))
+                if (!requirePermission(sender, "floonetwork.command.warp" + (subject.equals(sender) ? "" : ".other") + (sender instanceof Player && fp.isOwner((Player)sender) ? "" : ".anywhere")))
                 {
                     return false;
                 }
-                if (!fp.hasAccess((Player)sender))
+                if (sender instanceof Player && !fp.hasAccess((Player)sender))
                 {
                     return sendError(sender, "You do not have access to that fireplace.");
                 }
