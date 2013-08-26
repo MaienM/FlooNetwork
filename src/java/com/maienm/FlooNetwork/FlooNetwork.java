@@ -163,6 +163,9 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     world = getServer().getWorld(fpConfig.getString("world"));
                     location = new Location(world, coords.get(0), coords.get(1), coords.get(2));
 
+                    // Make sure the chunk is loaded.
+                    world.loadChunk(location.getChunk());
+
                     // Create the fireplace.
                     fp = Fireplace.detect(location);
                     if (fp == null)
