@@ -1,13 +1,14 @@
 package com.maienm.FlooNetwork;
 
+import com.m0pt0pmatt.menuservice.api.ActionEvent;
+import com.m0pt0pmatt.menuservice.api.ActionListener;
 import com.m0pt0pmatt.menuservice.api.MenuInstance;
 import com.m0pt0pmatt.menuservice.api.MenuService;
 import com.m0pt0pmatt.menuservice.api.Renderer;
-import com.m0pt0pmatt.menuservice.api.ActionEvent;
-import com.m0pt0pmatt.menuservice.api.ActionListener;
 import com.maienm.FlooNetwork.Fireplace;
 import com.maienm.FlooNetwork.PlayerMenu;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -17,6 +18,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.logging.FileHandler;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -46,6 +52,7 @@ import org.bukkit.metadata.LazyMetadataValue.CacheStrategy;
 import org.bukkit.metadata.LazyMetadataValue;
 import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.PluginLogger;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
@@ -87,6 +94,11 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
      * Map of all fireplaces.
      */
     private HashMap<OfflinePlayer, HashMap<String, Fireplace>> fireplaces = new HashMap<OfflinePlayer, HashMap<String, Fireplace>>();
+
+    /**
+     * The logger.
+     */
+    private Logger logger;
  
     /**
      * On plugin load.
@@ -94,6 +106,9 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     @Override
     public void onEnable() 
     {
+        // Create the logger.
+        createLogger();
+
         // Load the config.
         reloadConfigCustom();
 
@@ -116,11 +131,30 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
     }
 
     /**
+     * Create the logger object.
+     */
+    private void createLogger()
+    {
+        // Create the logger.
+        logger = new PluginLogger(this);
+
+        // Create a file output handler.
+        try
+        {
+            logger.addHandler(new FileHandler("fireplaces.log", true));
+        }
+        catch (IOException e)
+        {
+            logger.severe("Failed to open log file. Logs will not be written to file.");
+        }
+    }
+
+    /**
      * (Re)loads the config file.
      */
     private void reloadConfigCustom()
     {
-        System.out.println("Loading config.");
+        logger.info("Loading config.");
 
         // Copy over the default config if needed.
         saveDefaultConfig();
@@ -131,7 +165,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
         // Load the material from the config.
         TRAVALCATALYST = config.getInt("flooPowderID");
-        System.out.println(String.format("Set floo powder ID to %d.", TRAVALCATALYST));
+        logger.info(String.format("Set floo powder ID to %d.", TRAVALCATALYST));
 
         // Load the list of fireplaces from the config.
         ConfigurationSection cfgFireplaces = config.getConfigurationSection("fireplaces");
@@ -170,7 +204,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                     fp = Fireplace.detect(location);
                     if (fp == null)
                     {
-                        System.out.println(String.format("Fireplace %s of player %s is invalid; it has been ignored.", fpEntry.getKey(), playerEntry.getKey()));
+                        logger.severe(String.format("Fireplace %s of player %s is invalid; it has been ignored.", fpEntry.getKey(), playerEntry.getKey()));
                         continue;
                     }
 
@@ -184,11 +218,12 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
                         fp.item = new ItemStack(1);
                     }
                     fireplaces.get(player).put(fpEntry.getKey(), fp);
+                    logger.info(String.format("Loaded fireplace: %s", fp.toString()));
                 }
             }
         }
 
-        System.out.println("Done config.");
+        logger.info("Done loading the config.");
     }
 
     /**
@@ -568,7 +603,7 @@ public class FlooNetwork extends JavaPlugin implements Listener, ActionListener
 
         // Notify the player.
         player.sendMessage(ChatColor.BLUE + "Created fireplace");
-        System.out.println(fireplace.toString());
+        logger.info(String.format("New fireplace: %s", fireplace.toString()));
     }
 
     /**
