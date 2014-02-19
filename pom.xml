@@ -4,7 +4,7 @@
     <!-- Project data -->
     <groupId>com.maienm.FlooNetwork</groupId>
     <artifactId>FlooNetwork</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 
     <name>Floo Network</name>
     <description>Brings J.K. Rowling's Floo Network to Mojang's Minecraft.</description>
