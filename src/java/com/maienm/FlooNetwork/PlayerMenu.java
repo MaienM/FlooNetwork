@@ -123,7 +123,13 @@ class PlayerMenu extends MenuComponent
         Menu oldMenu = menuService.getMenu(floonetwork, getAttribute("tag").toString());
         if (oldMenu != null)
         {
-            menuService.removeMenu(floonetwork, oldMenu);
+            try 
+            {
+                menuService.removeMenu(floonetwork, oldMenu);
+            }
+            catch (Exception e) 
+            {
+            }
         }
 
         // Register the menu.
